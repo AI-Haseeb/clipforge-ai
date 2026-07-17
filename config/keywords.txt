@@ -1,0 +1,355 @@
+# ===============================
+# 🔥 CORE VIRAL HOOKS (ALL LANG)
+# ===============================
+secret | 6
+secrets | 6
+raaz | 6
+raaz khol raha hoon | 7
+chupa hua sach | 7
+sachai | 5
+truth | 5
+reality | 4
+exposed | 7
+khulasa | 7
+
+don’t skip | 7
+dont skip | 7
+skip mat karna | 7
+skip mat karo | 7
+mat skip karo | 7
+ruk jao | 6
+stop scrolling | 8
+scroll mat karo | 8
+before you scroll | 7
+scroll karne se pehle | 7
+
+watch till the end | 6
+watch till end | 6
+end tak dekho | 6
+poori video dekho | 6
+akhir tak dekho | 6
+
+# ===============================
+# ⚡ CURIOSITY / ATTENTION
+# ===============================
+amazing | 4
+important | 4
+best | 3
+how to | 4
+kaise | 4
+kaisa | 4
+kaise karein | 5
+yeh kaise hota hai | 5
+
+listen carefully | 5
+dhyaan se suno | 5
+gour se suno | 5
+pay attention | 5
+notice karo | 5
+
+you won’t believe | 7
+you wont believe | 7
+tum yaqeen nahi karoge | 7
+aap yaqeen nahi karoge | 7
+yeh dekh kar hairaan reh jaoge | 7
+shocking | 6
+hairaan kun | 6
+mind blowing | 6
+dimagh hila dene wala | 6
+
+wait for it | 6
+thora intezar karo | 6
+just wait | 5
+ek second | 4
+suno | 4
+dekho | 4
+
+# ===============================
+# 🚨 URGENCY / CTA
+# ===============================
+right now | 5
+abhi | 5
+abhi ke abhi | 6
+today | 3
+aaj | 3
+don’t miss | 6
+dont miss | 6
+miss mat karo | 6
+zaroor dekho | 6
+must watch | 6
+
+do this now | 6
+yeh abhi karo | 6
+try this | 4
+yeh try karo | 4
+save this | 5
+yeh save karo | 5
+share this | 4
+share karo | 4
+comment below | 3
+comment karo | 3
+follow for more | 5
+subscribe | 4
+like this | 3
+
+# ===============================
+# 🧠 AUTHORITY / TRUST
+# ===============================
+experts say | 4
+experts kehte hain | 4
+research shows | 4
+research ke mutabiq | 4
+studies show | 4
+scientists say | 4
+
+proven | 5
+tested | 4
+guaranteed | 5
+trusted | 4
+real results | 5
+real nateeje | 5
+
+# ===============================
+# 😱 SHOCK / MISTAKE / WARNING
+# ===============================
+big mistake | 6
+bohat bari ghalti | 6
+huge mistake | 6
+yeh ghalti mat karna | 7
+warning | 6
+khatra | 6
+dangerous | 6
+risky | 4
+scam | 7
+fraud | 7
+
+stop doing this | 7
+yeh band karo | 7
+mat karo | 6
+never do this | 7
+don’t do this | 7
+dont do this | 7
+avoid this | 5
+common mistake | 6
+most people do this | 6
+
+# ===============================
+# 💰 MONEY / BUSINESS / AI
+# ===============================
+money | 4
+paisa | 4
+earn | 5
+kamai | 5
+income | 4
+online earning | 6
+online kamai | 6
+passive income | 6
+
+business | 3
+side hustle | 6
+ai | 3
+artificial intelligence | 3
+chatgpt | 4
+automation | 4
+tools | 3
+software | 3
+skills | 3
+freelancing | 4
+clients | 3
+sales | 3
+marketing | 3
+ads | 3
+growth | 3
+scaling | 4
+
+# ===============================
+# 📚 LEARNING / VALUE
+# ===============================
+tip | 3
+tips | 3
+hack | 5
+hacks | 5
+trick | 4
+tricks | 4
+nuskha | 5
+formula | 3
+framework | 3
+strategy | 3
+system | 3
+
+guide | 4
+tutorial | 4
+step by step | 4
+step-by-step | 4
+lesson | 3
+seekho | 4
+learn this | 5
+simple trick | 5
+easy way | 4
+asan tareeqa | 4
+quick method | 4
+
+# ===============================
+# 🧩 PROBLEM → SOLUTION (HIGH HIT-RATE)
+# ===============================
+problem | 4
+masla | 4
+issue | 4
+solution | 6
+hal | 6
+fix | 5
+resolve | 4
+yeh karo | 5
+aisa karo | 5
+is tarah | 4
+simple solution | 6
+best solution | 6
+the solution is | 6
+hal yeh hai | 6
+the problem is | 5
+masla yeh hai | 5
+
+# ===============================
+# 🧠 MINDSET / MOTIVATION (UR/HI/EN)
+# ===============================
+discipline | 6
+consistency | 6
+focus | 5
+mindset | 5
+confidence | 5
+overthinking | 6
+stress | 6
+anxiety | 6
+pressure | 5
+calm | 5
+stay calm | 6
+relax | 4
+panic | 6
+
+motivation | 5
+motivated | 4
+life changing | 6
+life-changing | 6
+game changer | 6
+game-changer | 6
+you can do it | 5
+tum kar sakte ho | 6
+aap kar sakte ho | 6
+himat | 5
+sabr | 5
+shukar | 4
+
+# ===============================
+# 📌 STRUCTURE / NUMBERED POINTS (GOOD FOR CLIPS)
+# ===============================
+first | 4
+second | 4
+third | 4
+finally | 5
+last point | 5
+3 steps | 6
+5 steps | 6
+3 things | 6
+5 things | 6
+top 3 | 4
+top 5 | 4
+rule number | 5
+step one | 5
+step two | 5
+step three | 5
+
+# ===============================
+# 📊 COMPARISON / RANKING
+# ===============================
+better than | 4
+worse than | 3
+top | 3
+number one | 4
+best option | 4
+comparison | 3
+difference between | 4
+vs | 2
+
+# ===============================
+# 🧍 PERSONAL / STORY
+# ===============================
+my experience | 3
+mera experience | 3
+i learned | 4
+maine seekha | 4
+i discovered | 4
+maine discover kiya | 4
+i tested | 4
+maine test kiya | 4
+my mistake | 5
+meri ghalti | 5
+what happened | 5
+mere sath kya hua | 5
+true story | 4
+real story | 4
+
+# ===============================
+# 🗣️ SPEECH TRANSITIONS / FILLERS (HELPS NON-ENGLISH)
+# ===============================
+dekho | 4
+suno | 4
+acha | 3
+theek hai | 3
+toh | 2
+to | 2
+phir | 3
+lekin | 3
+magar | 3
+because | 3
+kyun ke | 3
+isi liye | 3
+bas | 2
+basically | 2
+honestly | 3
+sach bataun | 3
+trust me | 4
+mujh pe bharosa karo | 4
+believe me | 4
+seriously | 3
+let me show you | 5
+main tumhein dikhata hoon | 5
+here’s the thing | 4
+asal baat yeh hai | 4
+the truth is | 5
+asal sach yeh hai | 5
+
+# ===============================
+# 🎯 ADVICE / BEHAVIOR CHANGE (UR/HI/EN)
+# ===============================
+do this | 5
+don’t do this | 7
+dont do this | 7
+try this | 4
+start doing this | 6
+yeh shuru karo | 6
+stop doing this | 7
+yeh band karo | 7
+avoid this | 5
+remember this | 5
+yaad rakhna | 5
+note this | 4
+
+# ===============================
+# ❤️ EMOTIONS (SAFE, GENERAL)
+# ===============================
+pain | 4
+sad | 4
+heartbreaking | 5
+emotional | 4
+cry | 4
+tears | 4
+love | 3
+loss | 4
+death | 5
+broken | 4
+suffering | 4
+fear | 4
+guilt | 4
+regret | 5
+hopeless | 6
+hope | 5

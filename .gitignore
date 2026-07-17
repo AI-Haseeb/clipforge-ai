@@ -1,0 +1,61 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+clipforge_env/
+
+# Secrets / local config
+.env
+*.env
+config/openai_api_key.txt
+config/groq_api_key.txt
+config/huggingface_api_key.txt
+config/*api*key*.txt
+config/local_secrets.json
+config/license_state.json
+
+# Runtime data and generated media
+data/input/*
+data/uploads/*
+data/link_uploads/*
+data/work/*
+data/cache/*
+data/jobs/*
+data/output/*
+data/batches/*
+data/test_thumbnails/*
+data/reference_frames/*
+data/video_audit_frames/*
+data/frontend_video_audit_*/
+data/job_registry.json
+data/clipforge_auth*.sqlite3
+data/backend_verify_uvicorn*.log
+output/
+tmp/
+assets/*.zip
+
+# Keep folder placeholders
+!data/input/.gitkeep
+!data/uploads/.gitkeep
+!data/link_uploads/.gitkeep
+!data/work/.gitkeep
+!data/cache/.gitkeep
+!data/jobs/.gitkeep
+!data/output/.gitkeep
+!data/batches/.gitkeep
+
+# Local IDE / OS
+.vscode/settings.json
+.DS_Store
+Thumbs.db
+
+# Codex local metadata
+.agents/
+.codex/

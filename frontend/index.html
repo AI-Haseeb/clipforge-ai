@@ -1,0 +1,1426 @@
+﻿<!-- ClipForge AI file note: Static frontend markup for landing page, Creator Studio, auth modals, progress, pricing, and results UI. -->
+ï»¿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClipForge AI - AI Shorts Maker</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <link rel="preload" href="./assets/hero-showcase.png" as="image" />
+  <link rel="preload" href="./assets/logo.png" as="image" />
+  <link rel="stylesheet" href="style.css?v=20260708-restored" />
+</head>
+
+<body data-theme="dark">
+  <div class="site-bg"></div>
+  <div class="cursor-glow" aria-hidden="true"></div>
+  <div class="cursor-dot" aria-hidden="true"></div>
+
+  <header class="top-nav">
+    <a href="#product" class="brand" aria-label="ClipForge AI Home">
+      <img src="./assets/logo.png" alt="ClipForge AI Logo" class="brand-logo" width="42" height="42" decoding="async" />
+      <span>ClipForge AI</span>
+    </a>
+
+    <button class="nav-toggle" type="button" aria-label="Open navigation menu" aria-expanded="false">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <nav class="nav-links" aria-label="Main Navigation">
+      <a href="#product">Product</a>
+      <a href="#tools">Tools</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#features">Features</a>
+      <a href="#why-clipforge">Why ClipForge AI</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="#creator">Creator Studio</a>
+      <a href="#results">Results</a>
+    </nav>
+
+    <div class="nav-actions">
+      <button
+        class="theme-toggle"
+        type="button"
+        id="themeToggle"
+        aria-label="Switch to light mode"
+        title="Switch theme"
+      >
+        <span class="theme-toggle-icon" aria-hidden="true">
+          <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" focusable="false">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2.5M12 19.5V22M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M2 12h2.5M19.5 12H22M4.93 19.07l1.77-1.77M17.3 6.7l1.77-1.77"></path>
+          </svg>
+          <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" focusable="false">
+            <path d="M21 12.8A8.5 8.5 0 1 1 11.2 3 6.5 6.5 0 0 0 21 12.8Z"></path>
+          </svg>
+        </span>
+        <span class="theme-toggle-text visually-hidden">Theme</span>
+      </button>
+
+      <button
+        class="login-btn"
+        type="button"
+        id="loginOpenBtn"
+      >
+        Login
+      </button>
+
+      <a href="#creator" class="nav-cta">
+        Start Creating
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <section id="product" class="hero-section">
+      <div class="hero-left">
+        <h1>
+          Turn long videos into
+          <span>viral-ready shorts</span>
+          in minutes.
+        </h1>
+
+        <p>
+          Upload a video or paste a link. ClipForge AI creates shorts,
+          captions, music, thumbnails, metadata, hooks, titles, descriptions,
+          and hashtags for YouTube Shorts, TikTok, Instagram Reels, and Facebook Reels.
+        </p>
+
+        <div class="hero-actions hero-quick-actions">
+          <div class="quick-input-card hero-quick-card">
+            <div class="quick-input-actions" aria-label="Start creating with a video link or upload">
+              <a
+                href="#creator"
+                class="quick-link-field"
+                onclick="window.startCreatorFlow?.('link')"
+              >
+                <span class="link-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M7 17L17 7M9 7h8v8"></path>
+                  </svg>
+                </span>
+                <span>Drop a video link</span>
+              </a>
+
+              <a
+                href="#creator"
+                class="quick-input-btn primary"
+                onclick="window.startCreatorFlow?.('link')"
+              >
+                Create Shorts
+              </a>
+
+              <span class="quick-or">or</span>
+
+              <a
+                href="#creator"
+                class="quick-input-btn secondary"
+                onclick="window.startCreatorFlow?.('upload')"
+              >
+                Upload files
+              </a>
+            </div>
+
+            <div class="quick-rating-row">
+              <span class="stars" aria-label="5 star rating"></span>
+              <span>Creator-ready shorts, captions, thumbnails, and post copy in one local workflow.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <div class="hero-visual-wrap">
+          <div class="hero-image-frame">
+            <img
+              src="./assets/hero-showcase.png"
+              alt="ClipForge AI advanced short video showcase"
+              class="hero-showcase-image"
+              width="768"
+              height="1152"
+              decoding="async"
+              fetchpriority="high"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+
+    <section class="clipforge-proof-section" aria-label="ClipForge creator workflow proof">
+      <div class="proof-copy">
+        <h2>Output Stack</h2>
+        <p>
+          ClipForge turns raw footage into platform clips, styled captions,
+          thumbnails, metadata, and downloadable files without breaking your flow.
+        </p>
+      </div>
+
+      <div class="proof-orbit" aria-label="ClipForge output workflow">
+        <div class="orbit-line"></div>
+
+        <article class="orbit-node node-blue">
+          <span>AI</span>
+          <strong>Clip Picks</strong>
+        </article>
+
+        <article class="orbit-node node-cyan">
+          <span>9:16</span>
+          <strong>Reframe</strong>
+        </article>
+
+        <article class="orbit-node node-green">
+          <span>CAP</span>
+          <strong>Captions</strong>
+        </article>
+
+        <article class="orbit-node node-purple">
+          <span>IMG</span>
+          <strong>Thumbnails</strong>
+        </article>
+
+        <article class="orbit-node node-gold">
+          <span>TXT</span>
+          <strong>Metadata</strong>
+        </article>
+
+        <article class="orbit-node node-slate">
+          <span>ZIP</span>
+          <strong>Export</strong>
+        </article>
+      </div>
+    </section>
+
+    <section id="tools" class="tools-section">
+      <div class="section-head center">
+        <span class="section-kicker">ClipForge Tools</span>
+        <h2>Tools</h2>
+        <p>
+          ClipForge AI combines video clipping, transcription, captions, thumbnails,
+          metadata, and exports into one creator-focused workflow.
+        </p>
+      </div>
+
+      <div class="tools-grid">
+        <article class="tool-card available">
+          <div class="tool-icon">YT</div>
+          <span class="tool-status">Available</span>
+          <h3>YouTube Shorts Maker</h3>
+          <p>
+            Convert long videos into YouTube-ready short clips with captions,
+            thumbnails, and posting metadata.
+          </p>
+        </article>
+
+        <article class="tool-card available">
+          <div class="tool-icon">IG</div>
+          <span class="tool-status">Available</span>
+          <h3>Instagram Reels Maker</h3>
+          <p>
+            Create vertical reels with platform-ready aspect ratios, styled
+            captions, and auto-generated thumbnails.
+          </p>
+        </article>
+
+        <article class="tool-card available">
+          <div class="tool-icon">TK</div>
+          <span class="tool-status">Available</span>
+          <h3>TikTok Clip Maker</h3>
+          <p>
+            Generate short, punchy clips designed for fast mobile viewing and
+            social media sharing.
+          </p>
+        </article>
+
+        <article class="tool-card available">
+          <div class="tool-icon">IMG</div>
+          <span class="tool-status">Available</span>
+          <h3>Thumbnail Generator</h3>
+          <p>
+            Automatically create thumbnails using hook text, overlays, CTA text,
+            and thumbnail variations.
+          </p>
+        </article>
+
+        <article class="tool-card available">
+          <div class="tool-icon">CAP</div>
+          <span class="tool-status">Available</span>
+          <h3>Caption Generator</h3>
+          <p>
+            Add styled captions, viral presets, keyword highlights, custom fonts,
+            and Roman captions.
+          </p>
+        </article>
+
+        <article class="tool-card available">
+          <div class="tool-icon">#</div>
+          <span class="tool-status">Available</span>
+          <h3>Metadata Generator</h3>
+          <p>
+            Generate hooks, titles, descriptions, hashtags, and posting-ready
+            metadata files.
+          </p>
+        </article>
+
+        <article class="tool-card soon">
+          <div class="tool-icon">AUD</div>
+          <span class="tool-status">Coming Soon</span>
+          <h3>Audio To Text</h3>
+          <p>
+            Standalone audio transcription tool for podcasts, lectures, meetings,
+            and voice recordings.
+          </p>
+        </article>
+
+        <article class="tool-card soon">
+          <div class="tool-icon">TXT</div>
+          <span class="tool-status">Coming Soon</span>
+          <h3>Transcript Generator</h3>
+          <p>
+            Export clean transcripts from videos with timestamps and
+            creator-friendly formatting.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section id="how-it-works" class="how-section">
+      <div class="comparison-heading">
+        <h2>How It Works</h2>
+      </div>
+
+      <div class="how-split-layout">
+        <div class="how-steps-side">
+          <article class="how-step-row">
+            <div class="how-step-number">1</div>
+            <div class="how-step-content">
+              <h3>Upload or Paste Link</h3>
+              <p>
+                Start by uploading a local video file or pasting a supported public video link.
+                ClipForge AI prepares the content and creates a processing job.
+              </p>
+            </div>
+          </article>
+
+          <article class="how-step-row">
+            <div class="how-step-number">2</div>
+            <div class="how-step-content">
+              <h3>AI Transcribes and Detects Highlights</h3>
+              <p>
+                ClipForge AI uses transcription and intelligent clip detection to understand
+                the content, identify useful moments, and prepare short-form segments.
+              </p>
+            </div>
+          </article>
+
+          <article class="how-step-row">
+            <div class="how-step-number">3</div>
+            <div class="how-step-content">
+              <h3>Edit, Caption, and Package</h3>
+              <p>
+                The system applies captions, styles, reframing, music, thumbnails, and metadata
+                based on your selected settings and output preferences.
+              </p>
+            </div>
+          </article>
+
+          <article class="how-step-row">
+            <div class="how-step-number">4</div>
+            <div class="how-step-content">
+              <h3>Download and Publish</h3>
+              <p>
+                Preview the final shorts, review thumbnails and metadata, then download the
+                complete package and publish faster across major short-form platforms.
+              </p>
+            </div>
+          </article>
+        </div>
+
+        <div class="how-visual-side">
+          <div class="how-visual-frame">
+            <img
+              src="./assets/how-it-works-visual.png"
+              alt="ClipForge AI workflow visual"
+              class="how-visual-image"
+              width="900"
+              height="1100"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="features-section">
+      <div class="section-head center">
+        <span class="section-kicker">Core Features</span>
+        <h2>Features</h2>
+        <p>
+          These features are based on the current ClipForge AI backend and MVP pipeline.
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <article class="feature-card">
+          <h3>AI Highlight Detection</h3>
+          <p>
+            Semantic AI, rule-based chunks, manual ranges, and simple auto segmentation
+            help find useful clips.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <h3>Raw Footage Mode</h3>
+          <p>
+            Designed for podcasts, lectures, interviews, vlogs, and long recordings
+            with silence-based clip discovery.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <h3>Faster-Whisper Transcription</h3>
+          <p>
+            Speech is converted into text for captions, metadata, highlight detection,
+            and content understanding.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <h3>Viral Caption Presets</h3>
+          <p>
+            Uppercase captions, highlighted keywords, custom fonts, position control,
+            and fade animations.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <h3>Roman Captions</h3>
+          <p>
+            Supports Roman caption workflow for Urdu/Hindi style content where
+            romanized subtitles are useful.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <h3>Style-Aware Editing</h3>
+          <p>
+            Choose podcast, gaming, horror, meme, motivational, educational, funny,
+            or custom editing style.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <h3>Music Recommendation</h3>
+          <p>
+            Background music can be selected by category and balanced with speech
+            using volume controls.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <h3>Auto Thumbnail Generator</h3>
+          <p>
+            Generate thumbnails with overlays, hook text, CTA text, and reusable
+            thumbnail templates.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <h3>Metadata Generator</h3>
+          <p>
+            Generate hooks, titles, descriptions, hashtags, and ready-to-use
+            posting metadata.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <h3>Custom Fonts</h3>
+          <p>
+            Add fonts manually, use font presets, and style captions for
+            brand-specific short videos.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <h3>Multi-Platform Aspect Ratios</h3>
+          <p>
+            Export shorts for 9:16, 16:9, 1:1, and 4:5 formats depending on
+            the platform.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <h3>ZIP Export</h3>
+          <p>
+            Download generated shorts, thumbnails, metadata, and output files
+            together in one package.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section id="why-clipforge" class="why-section">
+      <div class="comparison-heading">
+        <h2>Why ClipForge AI</h2>
+      </div>
+
+      <div class="comparison-matrix" aria-label="ClipForge AI comparison">
+        <div class="comparison-matrix-head" aria-hidden="true">
+          <span>Feature</span>
+          <span>Traditional Workflow</span>
+          <span>Typical AI Clip Tool</span>
+          <span>ClipForge AI</span>
+        </div>
+
+        <div class="comparison-matrix-row">
+          <div class="comparison-feature"><span>01</span><strong>Long video to shorts</strong></div>
+          <div class="comparison-cell muted"><span class="compare-badge bad">Manual</span></div>
+          <div class="comparison-cell"><span class="compare-badge mid">Included</span></div>
+          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Advanced</span></div>
+        </div>
+
+        <div class="comparison-matrix-row">
+          <div class="comparison-feature"><span>02</span><strong>Raw footage support</strong></div>
+          <div class="comparison-cell muted"><span class="compare-badge bad">Manual editing</span></div>
+          <div class="comparison-cell"><span class="compare-badge mid">Limited</span></div>
+          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Included</span></div>
+        </div>
+
+        <div class="comparison-matrix-row">
+          <div class="comparison-feature"><span>03</span><strong>AI transcription</strong></div>
+          <div class="comparison-cell muted"><span class="compare-badge bad">Separate tool</span></div>
+          <div class="comparison-cell"><span class="compare-badge mid">Basic</span></div>
+          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Built in</span></div>
+        </div>
+
+        <div class="comparison-matrix-row">
+          <div class="comparison-feature"><span>04</span><strong>Semantic highlight detection</strong></div>
+          <div class="comparison-cell muted"><span class="compare-badge bad">Manual review</span></div>
+          <div class="comparison-cell"><span class="compare-badge mid">Limited</span></div>
+          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Included</span></div>
+        </div>
+
+        <div class="comparison-matrix-row">
+          <div class="comparison-feature"><span>05</span><strong>Styled captions</strong></div>
+          <div class="comparison-cell muted"><span class="compare-badge bad">Manual setup</span></div>
+          <div class="comparison-cell"><span class="compare-badge mid">Basic</span></div>
+          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Advanced</span></div>
+        </div>
+
+        <div class="comparison-matrix-row">
+          <div class="comparison-feature"><span>06</span><strong>Roman captions</strong></div>
+          <div class="comparison-cell muted"><span class="compare-badge bad">Not included</span></div>
+          <div class="comparison-cell"><span class="compare-badge mid">Limited</span></div>
+          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Included</span></div>
+        </div>
+
+        <div class="comparison-matrix-row">
+          <div class="comparison-feature"><span>07</span><strong>Multiple editing styles</strong></div>
+          <div class="comparison-cell muted"><span class="compare-badge bad">Manual</span></div>
+          <div class="comparison-cell"><span class="compare-badge mid">Limited</span></div>
+          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Style-aware</span></div>
+        </div>
+
+        <div class="comparison-matrix-row">
+          <div class="comparison-feature"><span>08</span><strong>Music integration</strong></div>
+          <div class="comparison-cell muted"><span class="compare-badge bad">Manual</span></div>
+          <div class="comparison-cell"><span class="compare-badge mid">Basic</span></div>
+          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Included</span></div>
+        </div>
+
+        <div class="comparison-matrix-row">
+          <div class="comparison-feature"><span>09</span><strong>Thumbnail generation</strong></div>
+          <div class="comparison-cell muted"><span class="compare-badge bad">Separate design</span></div>
+          <div class="comparison-cell"><span class="compare-badge mid">Limited</span></div>
+          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Auto generated</span></div>
+        </div>
+
+        <div class="comparison-matrix-row">
+          <div class="comparison-feature"><span>10</span><strong>Metadata generation</strong></div>
+          <div class="comparison-cell muted"><span class="compare-badge bad">Manual writing</span></div>
+          <div class="comparison-cell"><span class="compare-badge mid">Basic</span></div>
+          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Generated</span></div>
+        </div>
+
+        <div class="comparison-matrix-row">
+          <div class="comparison-feature"><span>11</span><strong>Custom fonts</strong></div>
+          <div class="comparison-cell muted"><span class="compare-badge bad">Manual setup</span></div>
+          <div class="comparison-cell"><span class="compare-badge mid">Limited</span></div>
+          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Supported</span></div>
+        </div>
+
+        <div class="comparison-matrix-row">
+          <div class="comparison-feature"><span>12</span><strong>ZIP export package</strong></div>
+          <div class="comparison-cell muted"><span class="compare-badge bad">Scattered files</span></div>
+          <div class="comparison-cell"><span class="compare-badge mid">Partial</span></div>
+          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Full package</span></div>
+        </div>
+
+        <div class="comparison-matrix-row">
+          <div class="comparison-feature"><span>13</span><strong>Future SaaS scalability</strong></div>
+          <div class="comparison-cell muted"><span class="compare-badge bad">No</span></div>
+          <div class="comparison-cell"><span class="compare-badge mid">Depends</span></div>
+          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Planned</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing" class="pricing-section">
+      <div class="pricing-heading">
+        <h2>Choose a plan</h2>
+
+        <div class="billing-toggle-wrap">
+          <span class="billing-label active" id="monthlyLabel" role="button" tabindex="0">Monthly</span>
+
+          <label class="billing-switch" aria-label="Toggle yearly billing">
+            <input type="checkbox" id="billingToggle" />
+            <span></span>
+          </label>
+
+          <span class="billing-label" id="yearlyLabel" role="button" tabindex="0">Yearly</span>
+        </div>
+
+        <p class="yearly-save-text">Save up to 40% with annual billing</p>
+      </div>
+
+      <div class="credits-note">
+        <div>
+          <strong>Credit Rule</strong>
+          <span>1 credit = 1 minute of uploaded video processing</span>
+        </div>
+        <div>
+          <strong>No extra charge</strong>
+          <span>Captions, thumbnails, metadata, and ZIP are included in the same project</span>
+        </div>
+        <div>
+          <strong>Example</strong>
+          <span>A 45-minute podcast uses 45 credits</span>
+        </div>
+      </div>
+
+      <div class="pricing-grid">
+        <article class="price-card monthly-only-plan" data-plan-card data-monthly-only="true">
+          <span class="plan-label">Free Test</span>
+          <h3>Free</h3>
+          <p class="price">
+            $0<span>/month</span>
+          </p>
+
+          <p class="credit-line">
+            30 credits/month
+          </p>
+
+          <p class="billing-note monthly-only-note">
+            Free plan is available monthly only.
+          </p>
+
+          <p class="price-desc">
+            Best for testing ClipForge AI with basic exports and limited processing.
+          </p>
+
+          <ul>
+            <li>30 minutes video processing</li>
+            <li>Max 10 min video length</li>
+            <li>3 shorts/month</li>
+            <li>720p export</li>
+            <li>Basic captions</li>
+            <li>Basic metadata</li>
+            <li>Watermark included</li>
+            <li>3-day storage</li>
+          </ul>
+
+          <a href="#creator" class="plan-btn">Start Testing</a>
+        </article>
+
+        <article class="price-card highlighted" data-plan-card>
+          <span class="plan-label">Most Popular</span>
+          <h3>Creator</h3>
+
+          <p
+            class="price dynamic-price"
+            data-monthly-price="$15"
+            data-yearly-price="$12"
+            data-monthly-period="/month"
+            data-yearly-period="/month"
+          >
+
+          <p
+            class="credit-line dynamic-credits"
+            data-monthly-credits="150 credits/month"
+            data-yearly-credits="1,800 credits/year"
+          >
+            150 credits/month
+          </p>
+
+          <p
+            class="billing-note"
+            data-monthly-note="$15 billed monthly"
+            data-yearly-note="$144 billed yearly"
+          >
+            $15 billed monthly
+          </p>
+
+          <p class="price-desc">
+            For individual creators who need watermark-free shorts, captions,
+            thumbnails, metadata, and ZIP export.
+          </p>
+
+          <ul>
+            <li>150 minutes video processing/month</li>
+            <li>Max 45 min video length</li>
+            <li>50 shorts/month</li>
+            <li>1080p export</li>
+            <li>No watermark</li>
+            <li>Semantic AI segmentation</li>
+            <li>Roman captions</li>
+            <li>Viral caption presets</li>
+            <li>Music categories</li>
+            <li>Auto thumbnails</li>
+            <li>Metadata generation</li>
+            <li>ZIP download</li>
+          </ul>
+
+          <a
+            href="javascript:void(0)"
+            onclick="alert('Creator plan payment system coming soon')"
+            class="plan-btn"
+          >
+            Join Waitlist
+          </a>
+        </article>
+
+        <article class="price-card" data-plan-card>
+          <span class="plan-label">Advanced</span>
+          <h3>Pro</h3>
+
+          <p
+            class="price dynamic-price"
+            data-monthly-price="$29"
+            data-yearly-price="$17.4"
+            data-monthly-period="/month"
+            data-yearly-period="/month"
+          >
+            $29<span>/month</span>
+          </p>
+
+          <p
+            class="credit-line dynamic-credits"
+            data-monthly-credits="400 credits/month"
+            data-yearly-credits="4,800 credits/year"
+          >
+            400 credits/month
+          </p>
+
+          <p
+            class="billing-note"
+            data-monthly-note="$29 billed monthly"
+            data-yearly-note="$208.8 billed yearly"
+          >
+            $29 billed monthly
+          </p>
+
+          <p class="price-desc">
+            For serious creators, podcasters, educators, marketers, and editors
+            who need more control.
+          </p>
+
+          <ul>
+            <li>400 minutes video processing/month</li>
+            <li>Max 2 hour video length</li>
+            <li>200 shorts/month</li>
+            <li>1080p export</li>
+            <li>No watermark</li>
+            <li>Everything in Creator</li>
+            <li>Raw Footage Mode</li>
+            <li>Advanced editing styles</li>
+            <li>Custom fonts</li>
+            <li>Thumbnail variations</li>
+            <li>Structured metadata</li>
+            <li>Priority queue</li>
+            <li>Future OpenAI enhancement</li>
+          </ul>
+
+          <a
+            href="javascript:void(0)"
+            onclick="alert('Pro plan payment system coming soon')"
+            class="plan-btn"
+          >
+            Join Waitlist
+          </a>
+        </article>
+
+        <article class="price-card" data-plan-card>
+          <span class="plan-label">Teams</span>
+          <h3>Agency</h3>
+
+          <p
+            class="price dynamic-price"
+            data-monthly-price="$79"
+            data-yearly-price="$49"
+            data-monthly-period="/month"
+            data-yearly-period="/month"
+          >
+            $79<span>/month</span>
+          </p>
+
+          <p
+            class="credit-line dynamic-credits"
+            data-monthly-credits="1200 credits/month"
+            data-yearly-credits="14,400 credits/year"
+          >
+            1200 credits/month
+          </p>
+
+          <p
+            class="billing-note"
+            data-monthly-note="$79 billed monthly"
+            data-yearly-note="$588 billed yearly"
+          >
+            $79 billed monthly
+          </p>
+
+          <p class="price-desc">
+            For agencies, editors, social media teams, and bulk content workflows.
+          </p>
+
+          <ul>
+            <li>1200 minutes video processing/month</li>
+            <li>Max 3 hour video length</li>
+            <li>800 shorts/month</li>
+            <li>No watermark</li>
+            <li>Everything in Pro</li>
+            <li>3 team seats later</li>
+            <li>Bulk workflows later</li>
+            <li>Client folders later</li>
+            <li>Brand kit later</li>
+            <li>Agency templates</li>
+            <li>Priority support</li>
+            <li>Future social scheduling</li>
+          </ul>
+
+          <a
+            href="javascript:void(0)"
+            onclick="alert('Agency plan contact system coming soon')"
+            class="plan-btn"
+          >
+            Contact Us
+          </a>
+        </article>
+      </div>
+
+      <div class="custom-credits-section">
+        <div class="pricing-heading small">
+          <h2>Need more credits?</h2>
+        </div>
+
+        <div class="credit-pack-grid">
+          <article class="credit-pack-card">
+            <span>Starter Boost</span>
+            <h3>+100 Credits</h3>
+            <p class="pack-price">$10</p>
+            <p>Good for small extra projects and short monthly overflow.</p>
+            <a href="javascript:void(0)" onclick="alert('Credit packs coming soon')">Add Credits</a>
+          </article>
+
+          <article class="credit-pack-card">
+            <span>Creator Boost</span>
+            <h3>+300 Credits</h3>
+            <p class="pack-price">$25</p>
+            <p>Best for creators processing extra podcasts, interviews, or lectures.</p>
+            <a href="javascript:void(0)" onclick="alert('Credit packs coming soon')">Add Credits</a>
+          </article>
+
+          <article class="credit-pack-card popular-pack">
+            <span>Pro Boost</span>
+            <h3>+700 Credits</h3>
+            <p class="pack-price">$49</p>
+            <p>Best value for frequent creators, editors, and weekly content batches.</p>
+            <a href="javascript:void(0)" onclick="alert('Credit packs coming soon')">Add Credits</a>
+          </article>
+
+          <article class="credit-pack-card">
+            <span>Agency Boost</span>
+            <h3>+1500 Credits</h3>
+            <p class="pack-price">$99</p>
+            <p>For agencies, teams, and client-heavy monthly production workflows.</p>
+            <a href="javascript:void(0)" onclick="alert('Credit packs coming soon')">Add Credits</a>
+          </article>
+        </div>
+
+        <div class="enterprise-credits">
+          <div>
+            <h3>Need custom monthly credits?</h3>
+            <p>
+              For large teams, schools, media companies, and agencies, custom credit limits,
+              storage, team seats, and workflow support can be added later.
+            </p>
+          </div>
+
+          <a
+            href="javascript:void(0)"
+            onclick="alert('Custom credits contact form coming soon')"
+          >
+            Request Custom Credits
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="faq-section">
+      <div class="faq-heading-wrap">
+        <h2>Frequently Asked Questions</h2>
+      </div>
+
+      <div class="faq-accordion">
+        <details class="faq-item" open>
+          <summary>
+            <span>How is ClipForge AI different from a normal video editor?</span>
+            <span class="faq-icon"></span>
+          </summary>
+          <div class="faq-answer">
+            <p>
+              A normal editor helps you cut videos manually. ClipForge AI is built to handle
+              the full short-form workflow: upload or paste a link, transcribe the video,
+              find useful moments, generate short clips, add captions, create thumbnails,
+              write metadata, and prepare a ZIP download package. The goal is to reduce
+              editing time and give creators a ready-to-use content package.
+            </p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>
+            <span>What do I get after one video is processed?</span>
+            <span class="faq-icon"></span>
+          </summary>
+          <div class="faq-answer">
+            <p>
+              After processing, ClipForge AI can generate short videos, captions, thumbnails,
+              hook text, titles, descriptions, hashtags, metadata files, and a downloadable
+              ZIP package. This means you are not only getting clips Ã¢â‚¬â€ you are getting the
+              supporting content needed to publish faster on YouTube Shorts, TikTok,
+              Instagram Reels, and Facebook Reels.
+            </p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>
+            <span>How do ClipForge AI credits work?</span>
+            <span class="faq-icon"></span>
+          </summary>
+          <div class="faq-answer">
+            <p>
+              The planned credit system is simple: 1 credit equals 1 minute of uploaded video
+              processing. For example, a 45-minute podcast will use 45 credits. Captions,
+              thumbnails, metadata, and ZIP export are included in the same processing job,
+              so users do not need to calculate every small output separately.
+            </p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>
+            <span>Can ClipForge AI handle podcasts, interviews, and raw footage?</span>
+            <span class="faq-icon"></span>
+          </summary>
+          <div class="faq-answer">
+            <p>
+              Yes, ClipForge AI is being designed for long-form content such as podcasts,
+              interviews, lectures, webinars, vlogs, and talking-head recordings. Raw Footage
+              Mode is part of the roadmap and MVP direction, with the goal of finding useful
+              speech-rich moments from longer recordings and turning them into short-form clips.
+            </p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>
+            <span>Which plan should I choose?</span>
+            <span class="faq-icon"></span>
+          </summary>
+          <div class="faq-answer">
+            <p>
+              Free is best for testing. Creator is best for individual creators who need
+              watermark-free shorts, captions, thumbnails, metadata, and ZIP export. Pro is
+              better for serious creators, podcasters, educators, and marketers who need more
+              credits, raw footage support, custom styling, and priority features. Agency is
+              for teams, editors, and bulk content workflows.
+            </p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section id="creator" class="creator-section">
+      <div class="creator-section-heading">
+        <h2>Creator Studio</h2>
+      </div>
+
+      <div class="studio-shell creator-flow-shell">
+        <aside class="creator-stepper" aria-label="Creator Studio steps">
+          <button class="creator-step active" type="button" data-step="1"><span class="step-mark">1</span><span><strong>Input Source</strong><small>Upload or paste link</small></span></button>
+          <button class="creator-step locked" type="button" data-step="2"><span class="step-mark">2</span><span><strong>Output Setup</strong><small>Mode, ratio, quality</small></span></button>
+          <button class="creator-step locked" type="button" data-step="3"><span class="step-mark">3</span><span><strong>Captions & Style</strong><small>Fonts and polish</small></span></button>
+          <button class="creator-step locked" type="button" data-step="4"><span class="step-mark">4</span><span><strong>Music & Package</strong><small>Audio and summary</small></span></button>
+          <button class="creator-step locked" type="button" data-step="5"><span class="step-mark">5</span><span><strong>Generate</strong><small>Start processing</small></span></button>
+        </aside>
+
+        <div class="creator-flow-main">
+          <section class="creator-step-panel active" data-step-panel="1">
+            <div class="panel-heading"><h3>Choose Your Input</h3><p>Start with one video, multiple videos, or a supported public link.</p></div>
+            <section class="input-tabs input-choice-tabs"><button id="uploadTab" class="tab active" type="button">Upload Video</button><button id="linkTab" class="tab" type="button">Paste Link</button></section>
+            <section id="uploadBox" class="input-box upload-drop">
+  <label for="videoFile">Upload Video</label>
+  <input type="file" id="videoFile" accept="video/*" multiple />
+  <small>Select one video, or choose multiple videos for batch processing.</small>
+  <div class="project-input-picker">
+    <div>
+      <strong>Project input folder</strong>
+      <span id="projectInputRoot">Uses this backend project's data/input folder.</span>
+    </div>
+    <button type="button" id="refreshProjectInputBtn">Refresh Project Videos</button>
+    <div id="projectInputList" class="project-input-list" aria-live="polite"></div>
+  </div>
+</section>
+            <section id="linkBox" class="input-box hidden"><label for="videoUrl">Video Link</label><input type="text" id="videoUrl" placeholder="Paste YouTube or public video link" /><small>Paste a supported public video link and let ClipForge download it.</small></section>
+            <div class="step-actions"><button type="button" class="flow-next-btn" data-next-step="2" disabled>Continue</button></div>
+          </section>
+
+          <section class="creator-step-panel" data-step-panel="2">
+            <div class="panel-heading"><h3>Basic Output Setup</h3><p>Choose how ClipForge should find and format your shorts.</p></div>
+            <section class="grid flow-grid">
+              <div><label for="segmentMode">Segment Mode</label><select id="segmentMode"><option value="semantic_ai">Semantic AI</option><option value="fixed_duration">Fixed Duration</option><option value="manual">Manual Ranges</option><option value="raw_footage">Raw Footage</option></select></div>
+              <div><label for="aspectRatio">Aspect Ratio</label><select id="aspectRatio"><option value="9:16">9:16 Shorts</option><option value="16:9">16:9 Wide</option><option value="1:1">1:1 Square</option><option value="4:5">4:5 Feed</option></select></div>
+              <div><label for="outputResolution">Output Quality</label><select id="outputResolution"><option value="1080p">1080p Full HD</option><option value="720p">720p HD</option><option value="480p">480p Small File</option></select></div>
+            </section>
+            <section class="advanced flow-conditional-row">
+              <div class="mode-extra" data-mode-extra="fixed_duration"><label for="clipDuration">Fixed Duration Seconds</label><input type="number" id="clipDuration" value="45" min="5" step="5" /><small>Example: 60 = 1 minute, 90 = 1 min 30 sec</small></div>
+              <div class="mode-extra manual-builder" data-mode-extra="manual">
+                <input type="hidden" id="manualRanges" />
+                <div class="manual-builder-head">
+                  <div>
+                    <label>Manual Clip Builder</label>
+                    <small>Create exact clip ranges. ClipForge will use these ranges instead of AI selection.</small>
+                  </div>
+                  <span id="manualRangeCount">0 clips</span>
+                </div>
+
+                <div class="manual-builder-grid">
+                  <div class="manual-preview-wrap">
+                    <video id="manualPreviewVideo" class="manual-preview-video" controls muted preload="metadata"></video>
+                    <p id="manualPreviewHint">Select an uploaded video to use current playback time, or type times manually.</p>
+                  </div>
+
+                  <div class="manual-range-controls">
+                    <div class="manual-time-grid">
+                      <div>
+                        <label for="manualStartTime">Start</label>
+                        <input id="manualStartTime" type="text" placeholder="00:10" inputmode="numeric" />
+                        <button type="button" class="mini-time-btn" id="setManualStartBtn">Use current</button>
+                      </div>
+                      <div>
+                        <label for="manualEndTime">End</label>
+                        <input id="manualEndTime" type="text" placeholder="00:45" inputmode="numeric" />
+                        <button type="button" class="mini-time-btn" id="setManualEndBtn">Use current</button>
+                      </div>
+                    </div>
+
+                    <div class="manual-actions-row">
+                      <button type="button" id="addManualRangeBtn">Add Clip</button>
+                      <button type="button" id="clearManualRangesBtn" class="secondary-mini-btn">Clear</button>
+                    </div>
+
+                    <p id="manualRangeMessage" class="manual-range-message">Backend format will be generated automatically.</p>
+                  </div>
+                </div>
+
+                <div id="manualRangeList" class="manual-range-list" aria-live="polite"></div>
+              </div>
+              <div class="mode-extra raw-note" data-mode-extra="raw_footage"><strong>Raw Footage Mode</strong><span>Best for podcasts, interviews, lectures, webinars, and long talking-head recordings.</span></div>
+            </section>
+            <div class="step-actions"><button type="button" class="flow-back-btn" data-prev-step="1">Back</button><button type="button" class="flow-next-btn" data-next-step="3">Continue</button></div>
+          </section>
+
+          <section class="creator-step-panel" data-step-panel="3">
+            <div class="panel-heading"><h3>Editing Setup</h3><p>Use a ready style, or switch to custom and control every detail yourself.</p></div>
+            <section class="caption-style-studio">
+              <div class="caption-style-controls">
+                <section class="editing-mode-card">
+                  <select id="editingWorkflow" class="workflow-hidden-select" aria-label="Editing setup"><option value="" selected>Choose editing setup</option><option value="custom">Custom Editing</option><option value="style">Smart Editing Style</option></select>
+                  <div class="editing-choice-grid" aria-label="Choose editing setup">
+                    <button type="button" class="editing-choice-card" data-editing-workflow="custom"><span>Manual control</span><strong>Custom Editing</strong><small>Fine-tune captions, filter, music, font, case, and position yourself.</small></button>
+                    <button type="button" class="editing-choice-card" data-editing-workflow="style"><span>One-click setup</span><strong>Smart Editing Style</strong><small>Pick a content style and ClipForge auto-selects captions, filter, and music.</small></button>
+                  </div>
+                  <div class="style-editing-option editing-dependent"><label for="editingStyle">Choose Style</label><select id="editingStyle"><option value="" selected>Choose a style</option><option value="podcast">Podcast / Interview</option><option value="educational">Educational</option><option value="tutorial">Tutorial / How-to</option><option value="motivational">Motivational</option><option value="romantic">Romantic</option><option value="sad">Sad / Emotional</option><option value="love">Love Story</option><option value="business">Business</option><option value="marketing">Marketing / Sales</option><option value="gaming">Gaming</option><option value="funny">Funny / Comedy</option><option value="meme">Meme / Viral</option><option value="horror">Horror / Suspense</option><option value="cinematic">Cinematic</option><option value="documentary">Documentary</option><option value="news">News / Commentary</option><option value="lifestyle">Lifestyle / Vlog</option><option value="fitness">Fitness / Sports</option></select></div>
+                  <div id="styleAppliedSummary" class="style-applied-summary editing-dependent"></div>
+                </section>
+                <section class="grid flow-grid caption-control-grid custom-editing-option editing-dependent">
+                  <div><label for="captions">Captions</label><select id="captions"><option value="true">On</option><option value="false">Off</option></select></div>
+                  <div class="caption-option"><label for="captionSize">Caption Size</label><select id="captionSize"><option value="extra_small">Extra Small</option><option value="small">Small</option><option value="medium" selected>Medium</option><option value="large">Large</option><option value="extra_large">Extra Large</option></select></div>
+                  <div class="caption-option"><label for="captionPosition">Caption Position</label><select id="captionPosition"><option value="bottom_center">Bottom Center</option><option value="center">Center</option><option value="top_center">Top Center</option></select></div>
+                  <div class="caption-option"><label for="fontFamily">Font Family</label><select id="fontFamily"><option value="preset">Preset Default</option><option value="Montserrat">Montserrat</option><option value="Poppins">Poppins</option><option value="Raleway">Raleway</option><option value="Anton">Anton</option><option value="Bebas Neue">Bebas Neue</option><option value="Oswald">Oswald</option><option value="Archivo Black">Archivo Black</option><option value="Luckiest Guy">Luckiest Guy</option><option value="Fredoka">Fredoka</option></select></div><div class="caption-option"><label for="captionCase">Letter Case</label><select id="captionCase"><option value="preset">Preset Style</option><option value="normal">Normal</option><option value="uppercase">Uppercase</option><option value="lowercase">Lowercase</option></select></div>
+                  <div class="caption-option hidden-select-wrap"><label for="fontPreset">Font Preset</label><select id="fontPreset"><option value="clean_white">Clean White</option><option value="bold_yellow">Bold Yellow</option><option value="podcast_blue">Podcast Blue</option><option value="gaming_neon">Gaming Neon</option><option value="horror_red">Horror Red</option><option value="meme_big">Meme Big</option><option value="viral_dynamic">Viral Dynamic</option><option value="creator_pop">Creator Pop</option><option value="scroll_stopper">Scroll Stopper</option><option value="soft_glow">Soft Glow</option></select></div>
+                  <div><label for="reframe">Reframe</label><select id="reframe"><option value="off">Off</option><option value="on">On</option></select></div>
+                  <div><label for="filterPreset">Filter</label><select id="filterPreset"><option>Natural Enhance (Recommended)</option><option>Punchy + Clear</option><option>Cool Modern</option><option>Warm Cinematic</option><option>Black & White (Mono)</option><option>None (No Filter)</option></select></div>
+                </section>
+
+                <section class="caption-option caption-preset-picker custom-editing-option editing-dependent" aria-label="Caption font presets">
+                  <div class="caption-picker-head">
+                    <strong>Font Presets</strong>
+                    <span>Live preview</span>
+                  </div>
+                  <div id="captionPresetGrid" class="caption-preset-grid"></div>
+                </section>
+              </div>
+
+              <aside class="caption-live-preview caption-option editing-dependent" aria-label="Caption preview">
+                <div class="preview-phone">
+                  <div class="preview-video-frame">
+                                        <video id="captionPreviewVideo" class="caption-preview-video" muted playsinline loop preload="metadata"></video>
+<div class="preview-subject"></div>
+                    <div id="captionPreviewText" class="preview-caption preview-pos-bottom_center preview-style-clean_white">
+                      <span>TO GET</span>
+                      <strong>STARTED</strong>
+                    </div>
+                  </div>
+                  <div class="preview-scrub"><span></span></div>
+                </div>
+                <div class="caption-preview-meta">
+                  <strong id="captionPreviewName">Clean White</strong>
+                  <span id="captionPreviewDetails">Montserrat - Medium - Bottom Center</span><em id="captionPreviewStyleState">Custom editing preview</em>
+                </div>
+              </aside>
+            </section>
+            <div class="step-actions"><button type="button" class="flow-back-btn" data-prev-step="2">Back</button><button type="button" class="flow-next-btn" data-next-step="4" id="styleContinueBtn" disabled>Continue</button></div>
+          </section>
+          <section class="creator-step-panel" data-step-panel="4">
+            <div class="panel-heading"><h3>Music & Package</h3><p>Pick music options and review the final package before processing.</p></div>
+            <section class="grid flow-grid">
+              <div class="custom-editing-option"><label for="musicEnabled">Music</label><select id="musicEnabled"><option value="false">Off</option><option value="true">On</option></select></div>
+              <div class="music-option custom-editing-option"><label for="musicCategory">Music Category</label><select id="musicCategory"><option value="none">None</option><option value="auto">AI Auto</option><option value="podcast">Podcast / Interview</option><option value="educational">Educational</option><option value="tutorial">Tutorial / How-to</option><option value="motivational">Motivational</option><option value="romantic">Romantic</option><option value="sad">Sad / Emotional</option><option value="love">Love Story</option><option value="business">Business</option><option value="marketing">Marketing / Sales</option><option value="gaming">Gaming</option><option value="funny">Funny / Comedy</option><option value="meme">Meme / Viral</option><option value="horror">Horror / Suspense</option><option value="cinematic">Cinematic</option><option value="documentary">Documentary</option><option value="news">News / Commentary</option><option value="lifestyle">Lifestyle / Vlog</option><option value="fitness">Fitness / Sports</option><option value="calm">Calm Background</option><option value="energetic">Energetic Beat</option></select></div>
+              <div class="music-option custom-editing-option music-volume-control"><div class="music-control-head"><label for="musicVolume">Music Volume</label><output id="musicVolumeValue" for="musicVolume">20%</output></div><input type="range" id="musicVolume" value="0.20" step="0.05" min="0" max="1" /></div>
+              <div class="music-option custom-editing-option music-preview-card"><div><strong>Music Preview</strong><span id="musicPreviewStatus">Choose a music category to preview.</span></div><audio id="musicPreviewAudio" controls preload="none"></audio><div id="musicTrackList" class="music-track-list" aria-label="Music tracks"></div></div>
+            </section>
+            <div class="step-actions"><button type="button" class="flow-back-btn" data-prev-step="3">Back</button><button type="button" class="flow-next-btn" data-next-step="5">Continue</button></div>
+          </section>
+
+          <section class="creator-step-panel" data-step-panel="5">
+            <div class="panel-heading"><h3>Generate</h3><p>Processing time depends on video length, selected quality, and server performance.</p></div>
+            <aside class="flow-summary-card" id="finalSummaryCard"></aside>
+            <button type="button" id="generateBtn" class="generate-btn">Generate Shorts</button>
+          </section>
+        </div>
+      </div>
+
+      <section class="status-card processing-card">
+        <div class="status-header"><div><h3>Status</h3><p id="currentJobLabel">No active job</p></div><span id="progressStep">Idle</span></div>
+        <div class="progress-shell" aria-label="Processing progress"><div id="progressBar" class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></div>
+        <div class="progress-timing-row" aria-label="Processing time estimate">
+          <span id="progressPct" class="progress-pct-badge">0.00%</span>
+          <span id="progressElapsed" class="progress-timing-label">Elapsed 00:00</span>
+          <span id="progressEta" class="progress-timing-label">ETA --:--</span>
+        </div>
+        <ol id="processingTimeline" class="processing-timeline" aria-label="Processing timeline"></ol>
+        <div class="progress-events" aria-label="Progress events">
+          <div class="progress-events-head"><strong>Progress Events</strong><span id="progressEventsCount">Waiting</span></div>
+          <ul id="progressEvents"></ul>
+        </div>
+        <pre id="statusText">Waiting for input...</pre>
+        <div class="resume-row"><input id="resumeJobId" type="text" placeholder="Paste Job ID to resume, example: what_is_pain_sad_multifandom" /><button id="resumeJobBtn" type="button">Resume Job</button><button id="clearJobBtn" type="button" class="secondary-btn">Clear</button></div>
+        <p class="hint">Active processing resumes after a browser refresh. Completed older runs load only when you paste a Job ID and click Resume Job.</p>
+      </section>
+    </section>
+
+    <section id="results" class="results-wrapper">
+      <section id="resultSection" class="results hidden">
+        <div class="results-header">
+          <div>
+            <span class="section-kicker">Output Dashboard</span>
+            <h3>Results</h3>
+            <p>
+              Preview shorts, thumbnails, structured metadata, output files, and
+              download the complete ZIP package.
+            </p>
+          </div>
+
+          <a id="zipDownload" class="zip-btn disabled-link" href="#" target="_blank" rel="noopener">
+            Download All as ZIP
+          </a>
+        </div>
+
+        <div id="resultSummary" class="result-summary-grid">
+          <article>
+            <strong>0</strong>
+            <span>Shorts</span>
+          </article>
+          <article>
+            <strong>0</strong>
+            <span>Thumbnails</span>
+          </article>
+          <article>
+            <strong>0</strong>
+            <span>Metadata Files</span>
+          </article>
+          <article>
+            <strong>ZIP</strong>
+            <span>Export Package</span>
+          </article>
+        </div>
+
+        <div class="results-dashboard">
+          <aside class="result-tabs result-side-tabs" role="tablist" aria-label="Generated results tabs">
+            <button class="result-tab active" type="button" data-result-tab="shortsPanel">
+              <span class="result-tab-copy"><strong>Shorts</strong><small>Preview generated clips</small></span>
+              <span id="shortsCount">0</span>
+            </button>
+            <button class="result-tab" type="button" data-result-tab="thumbsPanel">
+              <span class="result-tab-copy"><strong>Thumbnails</strong><small>Review image exports</small></span>
+              <span id="thumbsCount">0</span>
+            </button>
+            <button class="result-tab" type="button" data-result-tab="metadataPanel">
+              <span class="result-tab-copy"><strong>Metadata</strong><small>Copy titles and hashtags</small></span>
+              <span id="metaCount">0</span>
+            </button>
+          </aside>
+
+          <div class="result-panels results-content">
+            <section id="shortsPanel" class="result-panel active">
+              <div id="shortsList"></div>
+            </section>
+
+            <section id="thumbsPanel" class="result-panel">
+              <div id="thumbsList"></div>
+            </section>
+
+            <section id="metadataPanel" class="result-panel">
+              <div id="metaList"></div>
+            </section>
+
+          </div>
+        </div>
+      </section>
+    </section>
+    <section class="testimonials-section" aria-label="Creator testimonials">
+      <div class="section-head center">
+        <h2>Creator Love</h2>
+      </div>
+
+      <div class="testimonial-marquee row-left" aria-hidden="false">
+        <div class="testimonial-track">
+          <article class="testimonial-card tone-blue"><div class="testimonial-avatar">YT</div><p>One podcast became a full week of shorts, captions, thumbnails, and post copy.</p><strong>YouTube Creator</strong><span>Podcast channel</span></article>
+          <article class="testimonial-card tone-green"><div class="testimonial-avatar">ED</div><p>I upload lectures once and get clean clips ready for social posting.</p><strong>Online Educator</strong><span>Course content</span></article>
+          <article class="testimonial-card tone-purple"><div class="testimonial-avatar">SM</div><p>Styled captions and thumbnails make it feel like a mini content team.</p><strong>Social Manager</strong><span>Client workflow</span></article>
+          <article class="testimonial-card tone-gold"><div class="testimonial-avatar">PK</div><p>Roman captions made the clips feel local, polished, and audience-ready.</p><strong>Desi Creator</strong><span>Urdu/Hindi audience</span></article>
+          <article class="testimonial-card tone-cyan"><div class="testimonial-avatar">AG</div><p>The ZIP package keeps delivery simple: clips, thumbnails, and metadata together.</p><strong>Agency Editor</strong><span>Bulk exports</span></article>
+          <article class="testimonial-card tone-pink"><div class="testimonial-avatar">GM</div><p>Gaming clips look sharper without touching a manual editing timeline.</p><strong>Gaming Channel</strong><span>Shorts and reels</span></article>
+          <article class="testimonial-card tone-blue"><div class="testimonial-avatar">YT</div><p>One podcast became a full week of shorts, captions, thumbnails, and post copy.</p><strong>YouTube Creator</strong><span>Podcast channel</span></article>
+          <article class="testimonial-card tone-green"><div class="testimonial-avatar">ED</div><p>I upload lectures once and get clean clips ready for social posting.</p><strong>Online Educator</strong><span>Course content</span></article>
+          <article class="testimonial-card tone-purple"><div class="testimonial-avatar">SM</div><p>Styled captions and thumbnails make it feel like a mini content team.</p><strong>Social Manager</strong><span>Client workflow</span></article>
+          <article class="testimonial-card tone-gold"><div class="testimonial-avatar">PK</div><p>Roman captions made the clips feel local, polished, and audience-ready.</p><strong>Desi Creator</strong><span>Urdu/Hindi audience</span></article>
+          <article class="testimonial-card tone-cyan"><div class="testimonial-avatar">AG</div><p>The ZIP package keeps delivery simple: clips, thumbnails, and metadata together.</p><strong>Agency Editor</strong><span>Bulk exports</span></article>
+          <article class="testimonial-card tone-pink"><div class="testimonial-avatar">GM</div><p>Gaming clips look sharper without touching a manual editing timeline.</p><strong>Gaming Channel</strong><span>Shorts and reels</span></article>
+        </div>
+      </div>
+
+      <div class="testimonial-marquee row-right" aria-hidden="false">
+        <div class="testimonial-track reverse-track">
+          <article class="testimonial-card tone-gold"><div class="testimonial-avatar">MK</div><p>Metadata and hashtags save the boring part after editing.</p><strong>Marketing Creator</strong><span>Daily posting</span></article>
+          <article class="testimonial-card tone-cyan"><div class="testimonial-avatar">FC</div><p>Fixed-duration mode is perfect for fast testing and drafts.</p><strong>Faceless Channel</strong><span>Batch workflow</span></article>
+          <article class="testimonial-card tone-green"><div class="testimonial-avatar">CO</div><p>The captions are bold enough for mobile without covering the story.</p><strong>Coach</strong><span>Motivation clips</span></article>
+          <article class="testimonial-card tone-purple"><div class="testimonial-avatar">ED</div><p>I can hand off exports faster because every file is already organized.</p><strong>Video Editor</strong><span>Client delivery</span></article>
+          <article class="testimonial-card tone-blue"><div class="testimonial-avatar">TR</div><p>Talking-head reframe keeps the speaker centered for vertical shorts.</p><strong>Trainer</strong><span>Educational videos</span></article>
+          <article class="testimonial-card tone-pink"><div class="testimonial-avatar">CR</div><p>It gives me the content pack first, then I decide what to publish.</p><strong>Creator Studio</strong><span>Multi-platform clips</span></article>
+          <article class="testimonial-card tone-gold"><div class="testimonial-avatar">MK</div><p>Metadata and hashtags save the boring part after editing.</p><strong>Marketing Creator</strong><span>Daily posting</span></article>
+          <article class="testimonial-card tone-cyan"><div class="testimonial-avatar">FC</div><p>Fixed-duration mode is perfect for fast testing and drafts.</p><strong>Faceless Channel</strong><span>Batch workflow</span></article>
+          <article class="testimonial-card tone-green"><div class="testimonial-avatar">CO</div><p>The captions are bold enough for mobile without covering the story.</p><strong>Coach</strong><span>Motivation clips</span></article>
+          <article class="testimonial-card tone-purple"><div class="testimonial-avatar">ED</div><p>I can hand off exports faster because every file is already organized.</p><strong>Video Editor</strong><span>Client delivery</span></article>
+          <article class="testimonial-card tone-blue"><div class="testimonial-avatar">TR</div><p>Talking-head reframe keeps the speaker centered for vertical shorts.</p><strong>Trainer</strong><span>Educational videos</span></article>
+          <article class="testimonial-card tone-pink"><div class="testimonial-avatar">CR</div><p>It gives me the content pack first, then I decide what to publish.</p><strong>Creator Studio</strong><span>Multi-platform clips</span></article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#product" class="footer-logo">
+          <img src="./assets/logo.png" alt="ClipForge AI Logo" width="42" height="42" loading="lazy" decoding="async" />
+          <span>ClipForge AI</span>
+        </a>
+
+        <p>
+          AI-powered short-form video generation platform for creators, marketers,
+          educators, editors, and agencies.
+        </p>
+      </div>
+
+      <div class="footer-col">
+        <h3>Tools</h3>
+        <a href="#tools">YouTube Shorts Maker</a>
+        <a href="#tools">Thumbnail Generator</a>
+        <a href="#tools">Transcript Generator</a>
+        <a href="#tools">Caption Generator</a>
+        <a href="#tools">Metadata Generator</a>
+      </div>
+
+      <div class="footer-col">
+        <h3>Product</h3>
+        <a href="#features">Features</a>
+        <a href="#creator">Creator Studio</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#results">Results</a>
+      </div>
+
+      <div class="footer-col">
+        <h3>Future / Legal</h3>
+        <a href="javascript:void(0)" onclick="alert('Privacy Policy coming soon')">Privacy Policy</a>
+        <a href="javascript:void(0)" onclick="alert('Terms coming soon')">Terms</a>
+        <a href="javascript:void(0)" onclick="alert('Contact page coming soon')">Contact</a>
+        <a href="#pricing">SaaS Coming Soon</a>
+        <a href="#faq">FAQ</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>&copy; 2026 ClipForge AI. Built for creators, marketers, educators, and agencies.</span>
+      <a href="#product">Back to top</a>
+    </div>
+    </div>
+  </footer>
+
+
+  <div id="authModal" class="auth-modal hidden" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="auth-backdrop" data-auth-close></div>
+    <section class="auth-card">
+      <button class="auth-close" type="button" aria-label="Close login" data-auth-close>&times;</button>
+      <div class="auth-head">
+        <span class="section-kicker">Free account</span>
+        <h2 id="authTitle">Finish signing up to get your free clips</h2>
+        <p>Free plan available. No credit card required.</p>
+      </div>
+
+      <div class="auth-tabs" role="tablist">
+        <button id="authLoginTab" class="active" type="button">Sign In</button>
+        <button id="authSignupTab" type="button">Sign Up</button>
+      </div>
+
+      <div class="oauth-grid">
+        <button type="button" data-oauth="Google"><img src="./assets/icon-google.svg" alt="" /> Continue with Google</button>
+        <button type="button" data-oauth="Apple"><img src="./assets/icon-apple.svg" alt="" /> Continue with Apple</button>
+        <button type="button" data-oauth="Facebook"><img src="./assets/icon-facebook.svg" alt="" /> Continue with Facebook</button>
+      </div>
+
+      <div class="auth-divider"><span>or use email</span></div>
+
+      <form id="loginForm" class="auth-form">
+        <label>Email</label>
+        <input id="loginEmail" type="email" autocomplete="email" placeholder="you@example.com" required />
+        <label>Password</label>
+        <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Minimum 8 characters" required />
+        <button type="submit">Sign In</button>
+      </form>
+
+      <form id="signupForm" class="auth-form hidden">
+        <label>Name</label>
+        <input id="signupName" type="text" autocomplete="name" placeholder="Your name" required />
+        <label>Email</label>
+        <input id="signupEmail" type="email" autocomplete="email" placeholder="you@example.com" required />
+        <label>Password</label>
+        <input id="signupPassword" type="password" autocomplete="new-password" placeholder="Minimum 8 characters" required />
+        <button type="submit">Create Account</button>
+      </form>
+
+      <p id="authMessage" class="auth-message"></p>
+      <p class="auth-terms">By continuing, you agree to ClipForge AI terms and privacy policy.</p>
+    </section>
+  </div>
+
+  <div id="profileModal" class="auth-modal hidden" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+    <div class="auth-backdrop" data-profile-close></div>
+    <section class="profile-card">
+      <button class="auth-close" type="button" aria-label="Close profile" data-profile-close>&times;</button>
+      <div class="profile-head">
+        <div id="profileInitial" class="profile-avatar">C</div>
+        <div>
+          <span class="section-kicker">Account</span>
+          <h2 id="profileTitle">Profile</h2>
+          <p id="profileEmail">Not signed in</p>
+        </div>
+      </div>
+
+      <div class="profile-panel">
+        <h3 id="profileName">ClipForge User</h3>
+        <div class="profile-row"><span>Plan</span><strong id="profilePlan">Free</strong></div>
+        <div class="profile-row"><span>Credits</span><strong id="profileCredits">30</strong></div>
+        <div class="profile-row"><span>Storage</span><strong>Local testing</strong></div>
+      </div>
+
+      <div class="profile-panel">
+        <h3>Social connections</h3>
+        <p>Google, Apple, and Facebook can be connected after OAuth keys are configured on hosting.</p>
+        <button id="profileConnectBtn" type="button" class="profile-secondary">Connect accounts</button>
+      </div>
+
+      <div class="profile-actions">
+        <a href="#pricing" class="profile-upgrade" data-profile-close>Upgrade Plan</a>
+        <button id="profileLogoutBtn" type="button">Sign Out</button>
+      </div>
+    </section>
+  </div>
+  <script src="./app.js?v=20260708-restored" defer></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
