@@ -1,4 +1,4 @@
-﻿const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "http://127.0.0.1:8000";
 
 const STORAGE_KEYS = {
   lastJob: "clipforge_current_job_id",
@@ -2534,16 +2534,243 @@ function setupBillingToggle() {  // sets the up Billing Toggle value in the UI/s
       yearlyLabel.classList.toggle("active", isYearly);
     }
   }
+  monthlyLabel?.addEventListener("click", () => {
+    toggle.checked = false;
+    updateBillingUI();
+  });
+
+  yearlyLabel?.addEventListener("click", () => {
+    toggle.checked = true;
+    updateBillingUI();
+  });
 
   toggle.addEventListener("change", updateBillingUI);
   updateBillingUI();
 }
 
-window.addEventListener("DOMContentLoaded", () => {
+
+const benchmarkComparisonData = {
+  opusclip: {
+    logo: "OC",
+    name: "OpusClip",
+    description: "AI clipping platform focused on turning long videos into short social clips.",
+    available: ["AI Clipping", "AI Highlight Detection", "Captions", "Auto Reframe", "Transcript", "Export", "Publishing", "Team Collaboration", "Brand Templates"],
+    limited: ["Metadata", "Thumbnail", "Analytics", "API"],
+    missing: ["Roman Urdu Workflow", "Raw Footage Mode", "Fixed Duration Mode", "Transcript Cache", "ZIP Package"],
+    wins: ["Manual + AI Clipping", "Raw Footage Mode", "Roman Captions", "Metadata Included", "ZIP Export"]
+  },
+  submagic: {
+    logo: "SM",
+    name: "Submagic",
+    description: "Caption-first short-form editor with AI editing and social video tools.",
+    available: ["AI Captions", "AI Video Editing", "Caption Styling", "Magic Clips", "AI B-roll", "Templates", "Export"],
+    limited: ["Auto Reframe", "Metadata", "Thumbnail", "Publishing", "API"],
+    missing: ["Roman Urdu Workflow", "Raw Footage", "Transcript Cache", "ZIP Package"],
+    wins: ["Raw Footage Mode", "Metadata Generator", "Transcript Cache", "ZIP Export", "Creator Studio"]
+  },
+  munch: {
+    logo: "MU",
+    name: "Munch",
+    description: "Repurposing platform for finding clips and adapting content for social channels.",
+    available: ["AI Clipping", "Repurposing", "Auto Reframe", "Metadata Assistance", "Publishing", "Content Optimization"],
+    limited: ["Analytics", "Brand Management", "Scheduling"],
+    missing: ["Raw Footage", "Manual Clip Selection", "Roman Workflow", "Transcript Cache", "ZIP Package"],
+    wins: ["Manual Clipping", "Raw Footage Mode", "Roman Workflow", "ZIP Export", "Local Project Support"]
+  },
+  wayin: {
+    logo: "WY",
+    name: "Wayin",
+    description: "Short-video workflow tool with clipping, captions, publishing, and integrations.",
+    available: ["AI Clipping", "Captions", "Publishing", "Scheduling", "Google Drive", "API"],
+    limited: ["Metadata", "Thumbnail", "Analytics", "Brand Tools"],
+    missing: ["Raw Footage", "Roman Workflow", "Transcript Cache", "ZIP Package"],
+    wins: ["Creator Studio", "Raw Footage Mode", "Roman Captions", "Transcript Cache", "ZIP Export"]
+  },
+  autoshorts: {
+    logo: "AS",
+    name: "AutoShorts",
+    description: "Automation-focused tool for producing repeatable faceless short-video content.",
+    available: ["Faceless Automation", "AI Videos", "Scheduling", "Publishing", "Captions"],
+    limited: ["Templates", "Workflow Customization"],
+    missing: ["Manual Clipping", "Semantic Clipping", "Raw Footage", "Metadata", "Thumbnail", "Transcript Cache", "ZIP Package"],
+    wins: ["Manual Clip Control", "Semantic Clip Modes", "Video-Based Workflow", "Metadata + Thumbnails", "ZIP Package Export"]
+  }
+};
+
+const clipforgeBenchmarkFeatures = {
+  summary: [
+    { label: "Available Now", value: "28+" },
+    { label: "Coming Soon", value: "9+" }
+  ],
+  groups: [
+    {
+      title: "AI Clipping",
+      items: ["AI Highlight Detection", "Semantic Clip Selection", "Manual Clip Selection", "Fixed Duration Mode", "Raw Footage Mode"]
+    },
+    {
+      title: "AI Editing",
+      items: ["Faster Whisper Transcription", "Styled Captions", "Roman Urdu/Hindi/Punjabi Workflow", "Auto Reframe", "Talking Head Reframe"]
+    },
+    {
+      title: "Content Assets",
+      items: ["Thumbnail Generator", "Metadata Generator", "Titles", "Hooks", "Hashtags", "CTA", "Music Categories"]
+    },
+    {
+      title: "Workflow",
+      items: ["Multiple Upload Methods", "Paste Link", "Local Project Videos", "Transcript Cache", "Progress Tracking", "Resume Job", "ZIP Export", "Creator Studio"]
+    },
+    {
+      title: "Coming Soon",
+      type: "soon",
+      items: ["Publishing", "Scheduling", "Analytics", "Brand Kit", "Teams", "Cloud Storage", "API", "Google Drive", "Dropbox"]
+    }
+  ]
+};
+
+function createBenchmarkFeatureItem(text, type = "available") {
+  const item = document.createElement("div");
+  item.className = `benchmark-feature-item ${type}`;
+
+  const marker = document.createElement("span");
+  marker.className = "benchmark-feature-marker";
+  marker.textContent = type === "missing" ? "No" : type === "limited" ? "Limited" : type === "soon" ? "Soon" : "";
+
+  const label = document.createElement("span");
+  label.textContent = text;
+
+  item.append(marker, label);
+  return item;
+}
+
+function createBenchmarkSummaryItem(label, value) {
+  const item = document.createElement("div");
+  item.className = "benchmark-summary-card";
+
+  const valueNode = document.createElement("strong");
+  valueNode.textContent = value;
+
+  const labelNode = document.createElement("span");
+  labelNode.textContent = label;
+
+  item.append(valueNode, labelNode);
+  return item;
+}
+
+function renderBenchmarkSummary(container, items) {
+  if (!container) return;
+  container.textContent = "";
+  items.forEach((item) => container.appendChild(createBenchmarkSummaryItem(item.label, item.value)));
+}
+
+function renderBenchmarkGroup(container, title, items, type = "available") {
+  const group = document.createElement("section");
+  group.className = `benchmark-feature-group ${type}`;
+
+  const header = document.createElement("div");
+  header.className = "benchmark-group-head";
+
+  const heading = document.createElement("h4");
+  heading.className = "benchmark-group-title";
+  heading.textContent = title;
+
+  const count = document.createElement("span");
+  count.className = "benchmark-group-count";
+  count.textContent = String(items.length);
+
+  const list = document.createElement("div");
+  list.className = "benchmark-group-list";
+  items.forEach((feature) => list.appendChild(createBenchmarkFeatureItem(feature, type)));
+
+  header.append(heading, count);
+  group.append(header, list);
+  container.appendChild(group);
+}
+
+function renderClipforgeBenchmark(container, data) {
+  if (!container) return;
+  container.textContent = "";
+  data.groups.forEach((group) => renderBenchmarkGroup(container, group.title, group.items, group.type || "available"));
+}
+
+function renderCompetitorBenchmark(container, data) {
+  if (!container) return;
+  container.textContent = "";
+  renderBenchmarkGroup(container, "Available", data.available || [], "available");
+  renderBenchmarkGroup(container, "Limited", data.limited || [], "limited");
+  renderBenchmarkGroup(container, "Not Included", data.missing || [], "missing");
+}
+
+function renderBenchmarkWins(container, competitorName, wins) {
+  if (!container) return;
+  container.textContent = "";
+
+  const title = document.createElement("h4");
+  title.textContent = "Why ClipForge Wins";
+
+  const list = document.createElement("div");
+  list.className = "benchmark-wins-list";
+  wins.forEach((win) => list.appendChild(createBenchmarkFeatureItem(win, "available")));
+
+  const note = document.createElement("p");
+  note.textContent = `Compared with ${competitorName}, ClipForge keeps more of the creator workflow in one place.`;
+
+  container.append(title, list, note);
+}
+
+function setupBenchmarkComparison() {
+  const section = document.querySelector(".benchmark-section");
+  if (!section) return;
+
+  const pills = Array.from(section.querySelectorAll("[data-benchmark-target]"));
+  const card = document.getElementById("benchmarkCompetitorCard");
+  const logo = document.getElementById("benchmarkCompetitorLogo");
+  const name = document.getElementById("benchmarkCompetitorName");
+  const description = document.getElementById("benchmarkCompetitorDescription");
+  const competitorSummary = document.getElementById("benchmarkCompetitorSummary");
+  const competitorFeatures = document.getElementById("benchmarkCompetitorFeatures");
+  const clipforgeSummary = document.getElementById("benchmarkClipforgeSummary");
+  const clipforgeFeatures = document.getElementById("benchmarkClipforgeFeatures");
+  const wins = document.getElementById("benchmarkWins");
+
+  renderBenchmarkSummary(clipforgeSummary, clipforgeBenchmarkFeatures.summary);
+  renderClipforgeBenchmark(clipforgeFeatures, clipforgeBenchmarkFeatures);
+
+  function selectCompetitor(key) {
+    const data = benchmarkComparisonData[key] || benchmarkComparisonData.opusclip;
+    card?.classList.add("is-switching");
+
+    window.setTimeout(() => {
+      if (logo) logo.textContent = data.logo;
+      if (name) name.textContent = data.name;
+      if (description) description.textContent = data.description;
+      renderBenchmarkSummary(competitorSummary, [
+        { label: "Competitor", value: data.name },
+        { label: "Available Features", value: String((data.available || []).length) },
+        { label: "Limited Features", value: String((data.limited || []).length) }
+      ]);
+      renderCompetitorBenchmark(competitorFeatures, data);
+      renderBenchmarkWins(wins, data.name, data.wins || []);
+      card?.classList.remove("is-switching");
+    }, 140);
+
+    pills.forEach((pill) => {
+      const isActive = pill.dataset.benchmarkTarget === key;
+      pill.classList.toggle("active", isActive);
+      pill.setAttribute("aria-selected", String(isActive));
+    });
+  }
+
+  pills.forEach((pill) => {
+    pill.addEventListener("click", () => selectCompetitor(pill.dataset.benchmarkTarget));
+  });
+
+  selectCompetitor("opusclip");
+}window.addEventListener("DOMContentLoaded", () => {
   setupThemeMode();
   setupCursorGlow();
   setupPageAnimations();
   setupBillingToggle();
+  setupBenchmarkComparison();
 
   if (typeof setupResultTabs === "function") {
     setupResultTabs();

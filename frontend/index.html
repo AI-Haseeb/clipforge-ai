@@ -1,5 +1,5 @@
-﻿<!-- ClipForge AI file note: Static frontend markup for landing page, Creator Studio, auth modals, progress, pricing, and results UI. -->
-ï»¿<!DOCTYPE html>
+<!-- ClipForge AI file note: Static frontend markup for landing page, Creator Studio, auth modals, progress, pricing, and results UI. -->
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -79,21 +79,24 @@
   <main>
     <section id="product" class="hero-section">
       <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="pulse-dot" aria-hidden="true"></span>
+          AI SHORT-FORM CREATOR STUDIO
+        </div>
+
         <h1>
           Turn long videos into
-          <span>viral-ready shorts</span>
-          in minutes.
+          <span class="hero-gradient-word">ready-to-post</span>
+          short content.
         </h1>
 
         <p>
-          Upload a video or paste a link. ClipForge AI creates shorts,
-          captions, music, thumbnails, metadata, hooks, titles, descriptions,
-          and hashtags for YouTube Shorts, TikTok, Instagram Reels, and Facebook Reels.
+          Upload a video or paste a supported link. ClipForge AI finds useful moments and creates short clips with captions, thumbnails, metadata, music, and downloadable files in one workflow.
         </p>
 
         <div class="hero-actions hero-quick-actions">
           <div class="quick-input-card hero-quick-card">
-            <div class="quick-input-actions" aria-label="Start creating with a video link or upload">
+            <div class="quick-input-actions" aria-label="Start creating with a video link, upload, or project input">
               <a
                 href="#creator"
                 class="quick-link-field"
@@ -104,25 +107,23 @@
                     <path d="M7 17L17 7M9 7h8v8"></path>
                   </svg>
                 </span>
-                <span>Drop a video link</span>
+                <span>Paste a supported video link</span>
               </a>
 
               <a
                 href="#creator"
                 class="quick-input-btn primary"
-                onclick="window.startCreatorFlow?.('link')"
+                onclick="window.startCreatorFlow?.('upload')"
               >
                 Create Shorts
               </a>
-
-              <span class="quick-or">or</span>
 
               <a
                 href="#creator"
                 class="quick-input-btn secondary"
                 onclick="window.startCreatorFlow?.('upload')"
               >
-                Upload files
+                Explore Creator Studio
               </a>
             </div>
 
@@ -136,6 +137,10 @@
 
       <div class="hero-right">
         <div class="hero-visual-wrap">
+          <span class="hero-float-label label-reframe">AI Reframe</span>
+          <span class="hero-float-label label-captions">Captions Ready</span>
+          <span class="hero-float-label label-clip">Clip Selected</span>
+          <span class="hero-float-label label-thumb">Thumbnail Generated</span>
           <div class="hero-image-frame">
             <img
               src="./assets/hero-showcase.png"
@@ -466,108 +471,74 @@
       </div>
     </section>
 
-    <section id="why-clipforge" class="why-section">
-      <div class="comparison-heading">
+    <section id="why-clipforge" class="why-section benchmark-section">
+      <div class="comparison-heading benchmark-heading">
         <h2>Why ClipForge AI</h2>
+        <p>Compare ClipForge AI with leading AI short-video tools.</p>
       </div>
 
-      <div class="comparison-matrix" aria-label="ClipForge AI comparison">
-        <div class="comparison-matrix-head" aria-hidden="true">
-          <span>Feature</span>
-          <span>Traditional Workflow</span>
-          <span>Typical AI Clip Tool</span>
-          <span>ClipForge AI</span>
-        </div>
+      <div class="benchmark-selector" role="tablist" aria-label="Choose a short-video tool to compare">
+        <button class="benchmark-pill active" type="button" data-benchmark-target="opusclip" role="tab" aria-selected="true">OpusClip</button>
+        <button class="benchmark-pill" type="button" data-benchmark-target="submagic" role="tab">Submagic</button>
+        <button class="benchmark-pill" type="button" data-benchmark-target="munch" role="tab">Munch</button>
+        <button class="benchmark-pill" type="button" data-benchmark-target="wayin" role="tab">Wayin</button>
+        <button class="benchmark-pill" type="button" data-benchmark-target="autoshorts" role="tab">AutoShorts</button>
+      </div>
 
-        <div class="comparison-matrix-row">
-          <div class="comparison-feature"><span>01</span><strong>Long video to shorts</strong></div>
-          <div class="comparison-cell muted"><span class="compare-badge bad">Manual</span></div>
-          <div class="comparison-cell"><span class="compare-badge mid">Included</span></div>
-          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Advanced</span></div>
-        </div>
+      <div class="benchmark-card-grid" aria-live="polite">
+        <article class="benchmark-card clipforge-card">
+          <div class="benchmark-card-top">
+            <span class="benchmark-logo clipforge-logo">CF</span>
+            <div>
+              <span class="benchmark-label">CLIPFORGE AI</span>
+              <h3>ClipForge AI</h3>
+            </div>
+          </div>
+          <p>All-in-one workflow for turning long videos into complete short-form content packages.</p>
+          <div class="benchmark-summary-grid" id="benchmarkClipforgeSummary"></div>
+          <div class="benchmark-feature-list clipforge-feature-list" id="benchmarkClipforgeFeatures"></div>
+        </article>
 
-        <div class="comparison-matrix-row">
-          <div class="comparison-feature"><span>02</span><strong>Raw footage support</strong></div>
-          <div class="comparison-cell muted"><span class="compare-badge bad">Manual editing</span></div>
-          <div class="comparison-cell"><span class="compare-badge mid">Limited</span></div>
-          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Included</span></div>
-        </div>
+        <article class="benchmark-card competitor-card" id="benchmarkCompetitorCard">
+          <div class="benchmark-card-top">
+            <span class="benchmark-logo" id="benchmarkCompetitorLogo">OC</span>
+            <div>
+              <span class="benchmark-label">Selected competitor</span>
+              <h3 id="benchmarkCompetitorName">OpusClip</h3>
+            </div>
+          </div>
+          <p id="benchmarkCompetitorDescription">AI clipping tool focused on turning long videos into shorter social clips.</p>
+          <div class="benchmark-summary-grid" id="benchmarkCompetitorSummary"></div>
+          <div class="benchmark-feature-list" id="benchmarkCompetitorFeatures"></div>
+          <div class="benchmark-wins" id="benchmarkWins"></div>
+        </article>
+      </div>
 
-        <div class="comparison-matrix-row">
-          <div class="comparison-feature"><span>03</span><strong>AI transcription</strong></div>
-          <div class="comparison-cell muted"><span class="compare-badge bad">Separate tool</span></div>
-          <div class="comparison-cell"><span class="compare-badge mid">Basic</span></div>
-          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Built in</span></div>
-        </div>
+      <p class="benchmark-disclaimer">Competitor information is based on publicly available product pages and may change over time. Feature availability may vary by pricing plan.</p>
 
-        <div class="comparison-matrix-row">
-          <div class="comparison-feature"><span>04</span><strong>Semantic highlight detection</strong></div>
-          <div class="comparison-cell muted"><span class="compare-badge bad">Manual review</span></div>
-          <div class="comparison-cell"><span class="compare-badge mid">Limited</span></div>
-          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Included</span></div>
-        </div>
-
-        <div class="comparison-matrix-row">
-          <div class="comparison-feature"><span>05</span><strong>Styled captions</strong></div>
-          <div class="comparison-cell muted"><span class="compare-badge bad">Manual setup</span></div>
-          <div class="comparison-cell"><span class="compare-badge mid">Basic</span></div>
-          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Advanced</span></div>
-        </div>
-
-        <div class="comparison-matrix-row">
-          <div class="comparison-feature"><span>06</span><strong>Roman captions</strong></div>
-          <div class="comparison-cell muted"><span class="compare-badge bad">Not included</span></div>
-          <div class="comparison-cell"><span class="compare-badge mid">Limited</span></div>
-          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Included</span></div>
-        </div>
-
-        <div class="comparison-matrix-row">
-          <div class="comparison-feature"><span>07</span><strong>Multiple editing styles</strong></div>
-          <div class="comparison-cell muted"><span class="compare-badge bad">Manual</span></div>
-          <div class="comparison-cell"><span class="compare-badge mid">Limited</span></div>
-          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Style-aware</span></div>
-        </div>
-
-        <div class="comparison-matrix-row">
-          <div class="comparison-feature"><span>08</span><strong>Music integration</strong></div>
-          <div class="comparison-cell muted"><span class="compare-badge bad">Manual</span></div>
-          <div class="comparison-cell"><span class="compare-badge mid">Basic</span></div>
-          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Included</span></div>
-        </div>
-
-        <div class="comparison-matrix-row">
-          <div class="comparison-feature"><span>09</span><strong>Thumbnail generation</strong></div>
-          <div class="comparison-cell muted"><span class="compare-badge bad">Separate design</span></div>
-          <div class="comparison-cell"><span class="compare-badge mid">Limited</span></div>
-          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Auto generated</span></div>
-        </div>
-
-        <div class="comparison-matrix-row">
-          <div class="comparison-feature"><span>10</span><strong>Metadata generation</strong></div>
-          <div class="comparison-cell muted"><span class="compare-badge bad">Manual writing</span></div>
-          <div class="comparison-cell"><span class="compare-badge mid">Basic</span></div>
-          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Generated</span></div>
-        </div>
-
-        <div class="comparison-matrix-row">
-          <div class="comparison-feature"><span>11</span><strong>Custom fonts</strong></div>
-          <div class="comparison-cell muted"><span class="compare-badge bad">Manual setup</span></div>
-          <div class="comparison-cell"><span class="compare-badge mid">Limited</span></div>
-          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Supported</span></div>
-        </div>
-
-        <div class="comparison-matrix-row">
-          <div class="comparison-feature"><span>12</span><strong>ZIP export package</strong></div>
-          <div class="comparison-cell muted"><span class="compare-badge bad">Scattered files</span></div>
-          <div class="comparison-cell"><span class="compare-badge mid">Partial</span></div>
-          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Full package</span></div>
-        </div>
-
-        <div class="comparison-matrix-row">
-          <div class="comparison-feature"><span>13</span><strong>Future SaaS scalability</strong></div>
-          <div class="comparison-cell muted"><span class="compare-badge bad">No</span></div>
-          <div class="comparison-cell"><span class="compare-badge mid">Depends</span></div>
-          <div class="comparison-cell clipforge-win"><span class="compare-badge good">Planned</span></div>
+      <div class="switch-reasons">
+        <h3>Why creators switch to ClipForge</h3>
+        <div class="switch-reason-grid">
+          <article>
+            <span class="reason-icon">01</span>
+            <h4>All-in-One Workflow</h4>
+            <p>Upload -> Clip -> Caption -> Thumbnail -> Metadata -> ZIP.</p>
+          </article>
+          <article>
+            <span class="reason-icon">02</span>
+            <h4>Built for Creators</h4>
+            <p>Creator Studio keeps clipping, styling, exports, and files in one workflow.</p>
+          </article>
+          <article>
+            <span class="reason-icon">03</span>
+            <h4>Supports Regional Creators</h4>
+            <p>English, Roman Urdu, Roman Hindi, and Punjabi-friendly workflows.</p>
+          </article>
+          <article>
+            <span class="reason-icon">04</span>
+            <h4>Growing Platform</h4>
+            <p>Roadmap includes publishing, analytics, teams, cloud, and API.</p>
+          </article>
         </div>
       </div>
     </section>
@@ -576,18 +547,18 @@
       <div class="pricing-heading">
         <h2>Choose a plan</h2>
 
-        <div class="billing-toggle-wrap">
+        <div class="billing-toggle-wrap" aria-label="Billing options">
           <span class="billing-label active" id="monthlyLabel" role="button" tabindex="0">Monthly</span>
 
           <label class="billing-switch" aria-label="Toggle yearly billing">
-            <input type="checkbox" id="billingToggle" />
+            <input type="checkbox" id="billingToggle" checked />
             <span></span>
           </label>
 
           <span class="billing-label" id="yearlyLabel" role="button" tabindex="0">Yearly</span>
         </div>
 
-        <p class="yearly-save-text">Save up to 40% with annual billing</p>
+        <p class="yearly-save-text">Save up to 40% with annual billing.</p>
       </div>
 
       <div class="credits-note">
@@ -596,228 +567,150 @@
           <span>1 credit = 1 minute of uploaded video processing</span>
         </div>
         <div>
-          <strong>No extra charge</strong>
-          <span>Captions, thumbnails, metadata, and ZIP are included in the same project</span>
+          <strong>Included output</strong>
+          <span>Generating captions, thumbnails, metadata, and ZIP files does not consume extra processing credits.</span>
         </div>
         <div>
-          <strong>Example</strong>
-          <span>A 45-minute podcast uses 45 credits</span>
+          <strong>Examples</strong>
+          <span>15-minute video = 15 credits | 45-minute podcast = 45 credits | 90-minute webinar = 90 credits</span>
         </div>
       </div>
 
       <div class="pricing-grid">
         <article class="price-card monthly-only-plan" data-plan-card data-monthly-only="true">
-          <span class="plan-label">Free Test</span>
+          <span class="plan-label">Free</span>
           <h3>Free</h3>
-          <p class="price">
-            $0<span>/month</span>
-          </p>
-
-          <p class="credit-line">
-            30 credits/month
-          </p>
-
-          <p class="billing-note monthly-only-note">
-            Free plan is available monthly only.
-          </p>
-
-          <p class="price-desc">
-            Best for testing ClipForge AI with basic exports and limited processing.
-          </p>
-
+          <p class="price">$0<span>/month</span></p>
+          <p class="credit-line">30 credits/month</p>
+          <p class="billing-note monthly-only-note">For testing ClipForge AI with short videos and basic exports.</p>
           <ul>
-            <li>30 minutes video processing</li>
-            <li>Max 10 min video length</li>
-            <li>3 shorts/month</li>
+            <li>30 minutes of video processing per month</li>
+            <li>Maximum 10-minute input video</li>
+            <li>Maximum 3 generated shorts per month</li>
             <li>720p export</li>
-            <li>Basic captions</li>
-            <li>Basic metadata</li>
+            <li>Basic AI highlight detection</li>
+            <li>Fixed-duration clipping</li>
+            <li>Basic captions and caption presets</li>
+            <li>Basic metadata generation</li>
+            <li>1 thumbnail variation per short</li>
+            <li>Shorts, metadata, and ZIP preview/export</li>
+            <li>3-day project storage</li>
             <li>Watermark included</li>
-            <li>3-day storage</li>
+            <li class="not-included">Semantic advanced clipping - Not Included</li>
+            <li class="not-included">Raw Footage Mode - Not Included</li>
+            <li class="not-included">Custom fonts - Not Included</li>
+            <li class="not-included">Roman caption cleanup - Not Included</li>
+            <li class="not-included">Advanced editing styles - Not Included</li>
+            <li class="not-included">Priority processing - Not Included</li>
           </ul>
-
-          <a href="#creator" class="plan-btn">Start Testing</a>
+          <a href="#creator" class="plan-btn">Start Free</a>
         </article>
 
         <article class="price-card highlighted" data-plan-card>
           <span class="plan-label">Most Popular</span>
           <h3>Creator</h3>
-
-          <p
-            class="price dynamic-price"
-            data-monthly-price="$15"
-            data-yearly-price="$12"
-            data-monthly-period="/month"
-            data-yearly-period="/month"
-          >
-
-          <p
-            class="credit-line dynamic-credits"
-            data-monthly-credits="150 credits/month"
-            data-yearly-credits="1,800 credits/year"
-          >
-            150 credits/month
-          </p>
-
-          <p
-            class="billing-note"
-            data-monthly-note="$15 billed monthly"
-            data-yearly-note="$144 billed yearly"
-          >
-            $15 billed monthly
-          </p>
-
-          <p class="price-desc">
-            For individual creators who need watermark-free shorts, captions,
-            thumbnails, metadata, and ZIP export.
-          </p>
-
+          <p class="price dynamic-price" data-monthly-price="$15" data-yearly-price="$9" data-monthly-period="/month" data-yearly-period="/month">$15<span>/month</span></p>
+          <p class="credit-line dynamic-credits" data-monthly-credits="150 credits/month" data-yearly-credits="1,800 credits/year">150 credits/month</p>
+          <p class="billing-note" data-monthly-note="For individual creators who need watermark-free short clips and complete content packages." data-yearly-note="$108 billed annually. Includes 1,800 yearly processing credits.">For individual creators who need watermark-free short clips and complete content packages.</p>
           <ul>
-            <li>150 minutes video processing/month</li>
-            <li>Max 45 min video length</li>
-            <li>50 shorts/month</li>
+            <li>150 minutes of video processing per month</li>
+            <li>Maximum 45-minute input video</li>
+            <li>Maximum 50 generated shorts per month</li>
             <li>1080p export</li>
             <li>No watermark</li>
-            <li>Semantic AI segmentation</li>
-            <li>Roman captions</li>
-            <li>Viral caption presets</li>
-            <li>Music categories</li>
-            <li>Auto thumbnails</li>
-            <li>Metadata generation</li>
-            <li>ZIP download</li>
+            <li>AI highlight detection</li>
+            <li>Semantic, manual, and fixed-duration clipping</li>
+            <li>Styled caption presets and font presets</li>
+            <li>Roman Urdu/Hindi/Punjabi caption workflow</li>
+            <li>Vertical auto reframe and talking-head face-center reframe</li>
+            <li>Music categories and smart music recommendation</li>
+            <li>3 thumbnail variations per short</li>
+            <li>Metadata generation with titles, hooks, descriptions, hashtags, and CTA</li>
+            <li>Language-aware metadata</li>
+            <li>Transcript cache, progress tracking, and resume job support</li>
+            <li>ZIP export</li>
+            <li>30-day project storage</li>
+            <li class="coming-soon-feature">Direct publishing - Coming Soon</li>
+            <li class="coming-soon-feature">Social scheduling - Coming Soon</li>
           </ul>
-
-          <a
-            href="javascript:void(0)"
-            onclick="alert('Creator plan payment system coming soon')"
-            class="plan-btn"
-          >
-            Join Waitlist
-          </a>
+          <a href="javascript:void(0)" onclick="alert('Creator plan payment system coming soon')" class="plan-btn">Choose Creator</a>
         </article>
 
         <article class="price-card" data-plan-card>
           <span class="plan-label">Advanced</span>
           <h3>Pro</h3>
-
-          <p
-            class="price dynamic-price"
-            data-monthly-price="$29"
-            data-yearly-price="$17.4"
-            data-monthly-period="/month"
-            data-yearly-period="/month"
-          >
-            $29<span>/month</span>
-          </p>
-
-          <p
-            class="credit-line dynamic-credits"
-            data-monthly-credits="400 credits/month"
-            data-yearly-credits="4,800 credits/year"
-          >
-            400 credits/month
-          </p>
-
-          <p
-            class="billing-note"
-            data-monthly-note="$29 billed monthly"
-            data-yearly-note="$208.8 billed yearly"
-          >
-            $29 billed monthly
-          </p>
-
-          <p class="price-desc">
-            For serious creators, podcasters, educators, marketers, and editors
-            who need more control.
-          </p>
-
+          <p class="price dynamic-price" data-monthly-price="$29" data-yearly-price="$17.4" data-monthly-period="/month" data-yearly-period="/month">$29<span>/month</span></p>
+          <p class="credit-line dynamic-credits" data-monthly-credits="400 credits/month" data-yearly-credits="4,800 credits/year">400 credits/month</p>
+          <p class="billing-note" data-monthly-note="For serious creators, podcasters, educators, marketers, and editors who need more control." data-yearly-note="$208.8 billed annually. Includes 4,800 yearly processing credits.">For serious creators, podcasters, educators, marketers, and editors who need more control.</p>
           <ul>
-            <li>400 minutes video processing/month</li>
-            <li>Max 2 hour video length</li>
-            <li>200 shorts/month</li>
-            <li>1080p export</li>
-            <li>No watermark</li>
             <li>Everything in Creator</li>
+            <li>400 minutes of video processing per month</li>
+            <li>Maximum 2-hour input video</li>
+            <li>Maximum 200 generated shorts per month</li>
+            <li>1080p high-quality export</li>
             <li>Raw Footage Mode</li>
-            <li>Advanced editing styles</li>
-            <li>Custom fonts</li>
-            <li>Thumbnail variations</li>
-            <li>Structured metadata</li>
-            <li>Priority queue</li>
-            <li>Future OpenAI enhancement</li>
+            <li>Multiple video upload</li>
+            <li>Advanced editing style presets</li>
+            <li>Custom caption fonts and styling</li>
+            <li>Manual clip range builder</li>
+            <li>More thumbnail variations</li>
+            <li>Structured metadata files</li>
+            <li>Faster processing queue</li>
+            <li>Longer project history</li>
+            <li>Priority support</li>
+            <li>90-day project storage</li>
+            <li class="coming-soon-feature">Virality score - Coming Soon</li>
+            <li class="coming-soon-feature">Hook strength score - Coming Soon</li>
+            <li class="coming-soon-feature">Silence removal - Coming Soon</li>
+            <li class="coming-soon-feature">Filler word removal - Coming Soon</li>
+            <li class="coming-soon-feature">Speaker tracking - Coming Soon</li>
+            <li class="coming-soon-feature">Brand kit - Coming Soon</li>
+            <li class="coming-soon-feature">Publishing and scheduling - Coming Soon</li>
+            <li class="coming-soon-feature">Analytics dashboard - Coming Soon</li>
           </ul>
-
-          <a
-            href="javascript:void(0)"
-            onclick="alert('Pro plan payment system coming soon')"
-            class="plan-btn"
-          >
-            Join Waitlist
-          </a>
+          <a href="javascript:void(0)" onclick="alert('Pro plan payment system coming soon')" class="plan-btn">Choose Pro</a>
         </article>
 
         <article class="price-card" data-plan-card>
-          <span class="plan-label">Teams</span>
+          <span class="plan-label">Agency</span>
           <h3>Agency</h3>
-
-          <p
-            class="price dynamic-price"
-            data-monthly-price="$79"
-            data-yearly-price="$49"
-            data-monthly-period="/month"
-            data-yearly-period="/month"
-          >
-            $79<span>/month</span>
-          </p>
-
-          <p
-            class="credit-line dynamic-credits"
-            data-monthly-credits="1200 credits/month"
-            data-yearly-credits="14,400 credits/year"
-          >
-            1200 credits/month
-          </p>
-
-          <p
-            class="billing-note"
-            data-monthly-note="$79 billed monthly"
-            data-yearly-note="$588 billed yearly"
-          >
-            $79 billed monthly
-          </p>
-
-          <p class="price-desc">
-            For agencies, editors, social media teams, and bulk content workflows.
-          </p>
-
+          <p class="price dynamic-price" data-monthly-price="$79" data-yearly-price="$47.4" data-monthly-period="/month" data-yearly-period="/month">$79<span>/month</span></p>
+          <p class="credit-line dynamic-credits" data-monthly-credits="1200 credits/month" data-yearly-credits="14,400 credits/year">1200 credits/month</p>
+          <p class="billing-note" data-monthly-note="For agencies, editors, social media teams, and bulk client workflows." data-yearly-note="$568.8 billed annually. Includes 14,400 yearly processing credits.">For agencies, editors, social media teams, and bulk client workflows.</p>
           <ul>
-            <li>1200 minutes video processing/month</li>
-            <li>Max 3 hour video length</li>
-            <li>800 shorts/month</li>
-            <li>No watermark</li>
             <li>Everything in Pro</li>
-            <li>3 team seats later</li>
-            <li>Bulk workflows later</li>
-            <li>Client folders later</li>
-            <li>Brand kit later</li>
-            <li>Agency templates</li>
+            <li>1200 minutes of video processing per month</li>
+            <li>Maximum 3-hour input video</li>
+            <li>Maximum 800 generated shorts per month</li>
+            <li>No watermark</li>
+            <li>Bulk processing support</li>
+            <li>Highest processing priority</li>
+            <li>Extended project history</li>
             <li>Priority support</li>
-            <li>Future social scheduling</li>
+            <li>Agency-ready export packages</li>
+            <li>Custom monthly credit requests</li>
+            <li>180-day project storage</li>
+            <li class="coming-soon-feature">3 team seats - Coming Soon</li>
+            <li class="coming-soon-feature">Team workspaces - Coming Soon</li>
+            <li class="coming-soon-feature">User roles and permissions - Coming Soon</li>
+            <li class="coming-soon-feature">Client folders - Coming Soon</li>
+            <li class="coming-soon-feature">Client review links - Coming Soon</li>
+            <li class="coming-soon-feature">Approval workflow - Coming Soon</li>
+            <li class="coming-soon-feature">Brand kits - Coming Soon</li>
+            <li class="coming-soon-feature">Agency templates - Coming Soon</li>
+            <li class="coming-soon-feature">Social scheduling - Coming Soon</li>
+            <li class="coming-soon-feature">Social analytics - Coming Soon</li>
+            <li class="coming-soon-feature">API access - Coming Soon</li>
+            <li class="coming-soon-feature">White-label exports - Coming Soon</li>
           </ul>
-
-          <a
-            href="javascript:void(0)"
-            onclick="alert('Agency plan contact system coming soon')"
-            class="plan-btn"
-          >
-            Contact Us
-          </a>
+          <a href="javascript:void(0)" onclick="alert('Agency sales contact system coming soon')" class="plan-btn">Contact Sales</a>
         </article>
       </div>
 
       <div class="custom-credits-section">
         <div class="pricing-heading small">
           <h2>Need more credits?</h2>
+          <p>Extra credits are added to your account and used after your monthly plan credits.</p>
         </div>
 
         <div class="credit-pack-grid">
@@ -826,7 +719,7 @@
             <h3>+100 Credits</h3>
             <p class="pack-price">$10</p>
             <p>Good for small extra projects and short monthly overflow.</p>
-            <a href="javascript:void(0)" onclick="alert('Credit packs coming soon')">Add Credits</a>
+            <a href="javascript:void(0)" onclick="alert('Credit packs purchase flow coming soon')">Buy Credits</a>
           </article>
 
           <article class="credit-pack-card">
@@ -834,15 +727,16 @@
             <h3>+300 Credits</h3>
             <p class="pack-price">$25</p>
             <p>Best for creators processing extra podcasts, interviews, or lectures.</p>
-            <a href="javascript:void(0)" onclick="alert('Credit packs coming soon')">Add Credits</a>
+            <a href="javascript:void(0)" onclick="alert('Credit packs purchase flow coming soon')">Buy Credits</a>
           </article>
 
           <article class="credit-pack-card popular-pack">
-            <span>Pro Boost</span>
-            <h3>+700 Credits</h3>
+            <span>Best Value</span>
+            <h3>Pro Boost</h3>
+            <p class="credit-line">+700 Credits</p>
             <p class="pack-price">$49</p>
             <p>Best value for frequent creators, editors, and weekly content batches.</p>
-            <a href="javascript:void(0)" onclick="alert('Credit packs coming soon')">Add Credits</a>
+            <a href="javascript:void(0)" onclick="alert('Credit packs purchase flow coming soon')">Buy Credits</a>
           </article>
 
           <article class="credit-pack-card">
@@ -850,25 +744,16 @@
             <h3>+1500 Credits</h3>
             <p class="pack-price">$99</p>
             <p>For agencies, teams, and client-heavy monthly production workflows.</p>
-            <a href="javascript:void(0)" onclick="alert('Credit packs coming soon')">Add Credits</a>
+            <a href="javascript:void(0)" onclick="alert('Credit packs purchase flow coming soon')">Buy Credits</a>
           </article>
         </div>
 
         <div class="enterprise-credits">
           <div>
             <h3>Need custom monthly credits?</h3>
-            <p>
-              For large teams, schools, media companies, and agencies, custom credit limits,
-              storage, team seats, and workflow support can be added later.
-            </p>
+            <p>For large teams, schools, media companies, and agencies, custom credit limits and workflow support can be discussed for future plans.</p>
           </div>
-
-          <a
-            href="javascript:void(0)"
-            onclick="alert('Custom credits contact form coming soon')"
-          >
-            Request Custom Credits
-          </a>
+          <a href="javascript:void(0)" onclick="alert('Custom credits contact form coming soon')">Request Custom Credits</a>
         </div>
       </div>
     </section>
@@ -904,7 +789,7 @@
             <p>
               After processing, ClipForge AI can generate short videos, captions, thumbnails,
               hook text, titles, descriptions, hashtags, metadata files, and a downloadable
-              ZIP package. This means you are not only getting clips Ã¢â‚¬â€ you are getting the
+              ZIP package. This means you are not only getting clips â€” you are getting the
               supporting content needed to publish faster on YouTube Shorts, TikTok,
               Instagram Reels, and Facebook Reels.
             </p>
