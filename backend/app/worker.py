@@ -1,11 +1,11 @@
-from __future__ import annotations
+from __future__ import annotations  # allows modern type hints to work safely
 
-import sys
+import sys  # reads command-line arguments
 
-from backend.app.queue import default_queue_name, get_queue, get_redis_connection, redis_health
+from backend.app.queue import default_queue_name, get_queue, get_redis_connection, redis_health  # connects the worker to Redis/RQ queues
 
 
-def main() -> int:
+def main() -> int:  # starts the ClipForge queue worker process
     health = redis_health()
     if not health.get("queue_available"):
         print("[clipforge-worker] Redis/RQ queue is unavailable.", flush=True)
@@ -13,7 +13,7 @@ def main() -> int:
         return 1
 
     try:
-        from rq import SimpleWorker
+        from rq import SimpleWorker  # runs queued RQ jobs in the current process
     except Exception as exc:
         print(f"[clipforge-worker] RQ is not installed: {exc}", flush=True)
         return 1
@@ -32,3 +32,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

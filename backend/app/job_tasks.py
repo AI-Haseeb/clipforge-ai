@@ -1,21 +1,21 @@
-from __future__ import annotations
+from __future__ import annotations  # allows modern type hints to work safely
 
-import json
-import re
-import threading
-import time
-import traceback
-import uuid
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Optional
+import json  # reads and writes JSON data
+import re  # works with text patterns
+import threading  # controls safe work between threads
+import time  # works with delays and elapsed time
+import traceback  # creates detailed error reports
+import uuid  # creates unique IDs
+from datetime import datetime  # works with dates and times
+from pathlib import Path  # works with file and folder paths
+from typing import Any, Optional  # provides flexible type hints
 
 try:
-    from rq import get_current_job
+    from rq import get_current_job  # gives access to the currently running queue job
 except Exception:
     get_current_job = None
 
-from src.services.pipeline_runner import PipelineRequest, run_clipforge_pipeline
+from src.services.pipeline_runner import PipelineRequest, run_clipforge_pipeline  # runs the main ClipForge pipeline
 
 
 DATA_DIR = Path("data").resolve()
@@ -37,11 +37,11 @@ PROCESSING_STAGES = [
 ]
 
 
-def _now_iso() -> str:
+def _now_iso() -> str:  # creates a clean timestamp for saved job state
     return datetime.now().isoformat(timespec="seconds")
 
 
-def _load_registry() -> dict[str, Any]:
+def _load_registry() -> dict[str, Any]:  # loads all saved job records from disk
     if not JOB_REGISTRY_PATH.exists():
         return {}
     try:
@@ -51,7 +51,7 @@ def _load_registry() -> dict[str, Any]:
         return {}
 
 
-def _save_registry(jobs: dict[str, Any]) -> None:
+def _save_registry(jobs: dict[str, Any]) -> None:  # saves all job records safely to disk
     JOB_REGISTRY_PATH.parent.mkdir(parents=True, exist_ok=True)
     payload = json.dumps(jobs, indent=2, ensure_ascii=False)
     last_error = None
@@ -73,7 +73,7 @@ def _save_registry(jobs: dict[str, Any]) -> None:
         print(f"[WARN] Could not save job registry from worker: {last_error}", flush=True)
 
 
-def _update_job(job_id: str, updates: dict[str, Any]) -> dict[str, Any]:
+def _update_job(job_id: str, updates: dict[str, Any]) -> dict[str, Any]:  # updates one job record with new values
     jobs = _load_registry()
     job = jobs.setdefault(job_id, {})
     job.update(updates)
@@ -81,7 +81,7 @@ def _update_job(job_id: str, updates: dict[str, Any]) -> dict[str, Any]:
     return job
 
 
-def _stage_label(stage: int, fallback: Optional[str] = None) -> str:
+def _stage_label(stage: int, fallback: Optional[str] = None) -> str:  # returns the readable name for a progress stage
     if fallback:
         return fallback
     if 1 <= stage <= len(PROCESSING_STAGES):
@@ -89,7 +89,7 @@ def _stage_label(stage: int, fallback: Optional[str] = None) -> str:
     return "Processing"
 
 
-def _set_job_stage(job_id: str, stage: int, label: Optional[str] = None, percent: Optional[float] = None) -> None:
+def _set_job_stage(job_id: str, stage: int, label: Optional[str] = None, percent: Optional[float] = None) -> None:  # saves the current progress stage for a job
     updates: dict[str, Any] = {
         "progress_stage": stage,
         "progress_label": _stage_label(stage, label),
@@ -100,7 +100,7 @@ def _set_job_stage(job_id: str, stage: int, label: Optional[str] = None, percent
     _update_job(job_id, updates)
 
 
-def _append_job_event(job_id: str, line: str, stage: Optional[int] = None, percent: Optional[float] = None) -> None:
+def _append_job_event(job_id: str, line: str, stage: Optional[int] = None, percent: Optional[float] = None) -> None:  # adds one progress event to a job
     if not line:
         return
     jobs = _load_registry()
@@ -120,7 +120,7 @@ def _append_job_event(job_id: str, line: str, stage: Optional[int] = None, perce
     _save_registry(jobs)
 
 
-def _parse_log_percent(clean_line: str, stage: Optional[int]) -> Optional[float]:
+def _parse_log_percent(clean_line: str, stage: Optional[int]) -> Optional[float]:  # finds a progress percentage from a log line
     text = clean_line.lower()
     if stage == 2 and (text.startswith("transcribing:") or text.startswith("translating:")):
         match = re.search(r"(\d+(?:\.\d+)?)\s*/\s*100", clean_line)
@@ -133,7 +133,7 @@ def _parse_log_percent(clean_line: str, stage: Optional[int]) -> Optional[float]
     return None
 
 
-def _detect_stage_from_log(line: str) -> Optional[int]:
+def _detect_stage_from_log(line: str) -> Optional[int]:  # detects the progress stage from a pipeline log line
     text = line.strip().lower()
     if not text:
         return None
@@ -167,8 +167,8 @@ def _detect_stage_from_log(line: str) -> Optional[int]:
     return None
 
 
-def _make_job_log_callback(job_id: str):
-    def on_log(line: str) -> None:
+def _make_job_log_callback(job_id: str):  # creates a logger that sends pipeline updates into job progress
+    def on_log(line: str) -> None:  # handles one pipeline log message
         clean_line = line.strip()
         if clean_line.lower().startswith("[progress-stage]"):
             parts = clean_line.split(" ", 2)
@@ -193,14 +193,14 @@ def _make_job_log_callback(job_id: str):
     return on_log
 
 
-def _write_error_log(job_id: str, error_text: str) -> str:
+def _write_error_log(job_id: str, error_text: str) -> str:  # writes a detailed error log for a failed job
     ERROR_LOG_DIR.mkdir(parents=True, exist_ok=True)
     path = ERROR_LOG_DIR / f"{job_id}.log"
     path.write_text(error_text, encoding="utf-8")
     return str(path)
 
 
-def run_clipforge_job(job_id: str, request_payload: dict[str, Any]) -> dict[str, Any]:
+def run_clipforge_job(job_id: str, request_payload: dict[str, Any]) -> dict[str, Any]:  # runs one queued ClipForge video job
     rq_job = get_current_job() if get_current_job else None
     worker_name = getattr(rq_job, "worker_name", None) if rq_job else None
     retry_count = None
@@ -252,14 +252,14 @@ def run_clipforge_job(job_id: str, request_payload: dict[str, Any]) -> dict[str,
         raise
 
 
-def _copy_request_for_video(base_request: PipelineRequest, input_video: str, output_base_dir: str) -> PipelineRequest:
+def _copy_request_for_video(base_request: PipelineRequest, input_video: str, output_base_dir: str) -> PipelineRequest:  # creates a separate request for one batch video
     data = base_request.__dict__.copy()
     data["input_video"] = input_video
     data["output_base_dir"] = output_base_dir
     return PipelineRequest(**data)
 
 
-def run_clipforge_batch_job(batch_id: str, base_request_payload: dict[str, Any], video_paths: list[str]) -> dict[str, Any]:
+def run_clipforge_batch_job(batch_id: str, base_request_payload: dict[str, Any], video_paths: list[str]) -> dict[str, Any]:  # runs a queued batch of videos
     _update_job(batch_id, {
         "status": "processing",
         "queue_status": "started",
@@ -346,8 +346,8 @@ def run_clipforge_batch_job(batch_id: str, base_request_payload: dict[str, Any],
     return final_payload["result"]
 
 
-def run_clipforge_link_job(job_id: str, request_payload: dict[str, Any], video_url: str) -> dict[str, Any]:
-    from src.services.video_downloader import download_video_from_url
+def run_clipforge_link_job(job_id: str, request_payload: dict[str, Any], video_url: str) -> dict[str, Any]:  # downloads a link and runs it as a queued job
+    from src.services.video_downloader import download_video_from_url  # downloads videos from supported URLs
 
     _update_job(job_id, {
         "status": "processing",
@@ -380,3 +380,4 @@ def run_clipforge_link_job(job_id: str, request_payload: dict[str, Any], video_u
             "error_type": type(exc).__name__,
         })
         raise
+

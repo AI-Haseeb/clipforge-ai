@@ -1,13 +1,13 @@
-﻿from __future__ import annotations
+from __future__ import annotations  # allows modern type hints to work safely
 
-import os
-from functools import lru_cache
-from typing import Any, Optional
+import os  # reads environment variables
+from functools import lru_cache  # caches repeated function results
+from typing import Any, Optional  # provides flexible type hints
 
 try:
-    from redis import Redis
-    from rq import Queue, Retry
-    from rq.job import Job
+    from redis import Redis  # connects Python code to Redis
+    from rq import Queue, Retry  # creates job queues and retry rules
+    from rq.job import Job  # reads saved queue job records
 except Exception as exc:  # keeps FastAPI importable before queue deps are installed
     Redis = None
     Queue = None
@@ -21,55 +21,55 @@ else:
 ACTIVE_QUEUE_STATUSES = {"queued", "started", "deferred", "scheduled"}
 
 
-def redis_url() -> str:
+def redis_url() -> str:  # returns the Redis connection URL
     return os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 
-def default_queue_name() -> str:
+def default_queue_name() -> str:  # returns the default RQ queue name
     return os.getenv("RQ_DEFAULT_QUEUE", "default")
 
 
-def _env_int(name: str, default: int) -> int:
+def _env_int(name: str, default: int) -> int:  # reads an integer setting from environment variables
     try:
         return int(os.getenv(name, str(default)))
     except ValueError:
         return default
 
 
-def rq_job_timeout() -> int:
+def rq_job_timeout() -> int:  # returns the maximum runtime for one queued job
     return _env_int("RQ_JOB_TIMEOUT", 7200)
 
 
-def rq_result_ttl() -> int:
+def rq_result_ttl() -> int:  # returns how long successful queue results stay saved
     return _env_int("RQ_RESULT_TTL", 86400)
 
 
-def rq_failure_ttl() -> int:
+def rq_failure_ttl() -> int:  # returns how long failed queue results stay saved
     return _env_int("RQ_FAILURE_TTL", 604800)
 
 
-def rq_max_retries() -> int:
+def rq_max_retries() -> int:  # returns how many times a failed job can retry
     return _env_int("RQ_MAX_RETRIES", 2)
 
 
 @lru_cache(maxsize=1)
-def get_redis_connection():
+def get_redis_connection():  # creates or returns the Redis connection
     if QUEUE_IMPORT_ERROR:
         raise RuntimeError(f"Redis/RQ packages are not installed: {QUEUE_IMPORT_ERROR}")
     return Redis.from_url(redis_url())
 
 
 @lru_cache(maxsize=8)
-def get_queue(name: Optional[str] = None):
+def get_queue(name: Optional[str] = None):  # returns an RQ queue object
     queue_name = name or default_queue_name()
     return Queue(queue_name, connection=get_redis_connection(), default_timeout=rq_job_timeout())
 
 
-def rq_job_key(job_id: str) -> str:
+def rq_job_key(job_id: str) -> str:  # creates a stable RQ job key from a ClipForge job id
     return f"clipforge:{job_id}"
 
 
-def redis_health() -> dict[str, Any]:
+def redis_health() -> dict[str, Any]:  # checks whether Redis and RQ are ready
     if QUEUE_IMPORT_ERROR:
         return {
             "redis_connected": False,
@@ -98,7 +98,7 @@ def redis_health() -> dict[str, Any]:
         }
 
 
-def fetch_rq_job(job_id: str):
+def fetch_rq_job(job_id: str):  # finds a queued job by ClipForge job id
     if QUEUE_IMPORT_ERROR:
         return None
     try:
@@ -107,7 +107,7 @@ def fetch_rq_job(job_id: str):
         return None
 
 
-def queue_job_info(job_id: str, queue_name: Optional[str] = None) -> dict[str, Any]:
+def queue_job_info(job_id: str, queue_name: Optional[str] = None) -> dict[str, Any]:  # returns queue status details for a job
     info: dict[str, Any] = {
         "rq_job_id": rq_job_key(job_id),
         "queue_name": queue_name or default_queue_name(),
@@ -146,11 +146,11 @@ def queue_job_info(job_id: str, queue_name: Optional[str] = None) -> dict[str, A
     return info
 
 
-def is_queue_job_active(job_id: str, queue_name: Optional[str] = None) -> bool:
+def is_queue_job_active(job_id: str, queue_name: Optional[str] = None) -> bool:  # checks if a job is still waiting or running
     return queue_job_info(job_id, queue_name).get("queue_status") in ACTIVE_QUEUE_STATUSES
 
 
-def enqueue_clipforge_job(job_id: str, request_payload: dict[str, Any], queue_name: Optional[str] = None, task_name: str = "backend.app.job_tasks.run_clipforge_job", extra_args: Optional[list[Any]] = None) -> dict[str, Any]:
+def enqueue_clipforge_job(job_id: str, request_payload: dict[str, Any], queue_name: Optional[str] = None, task_name: str = "backend.app.job_tasks.run_clipforge_job", extra_args: Optional[list[Any]] = None) -> dict[str, Any]:  # adds a ClipForge job to Redis/RQ
     health = redis_health()
     if not health.get("queue_available"):
         return {"ok": False, **health}
@@ -200,4 +200,5 @@ def enqueue_clipforge_job(job_id: str, request_payload: dict[str, Any], queue_na
             "queue_name": queue_name or default_queue_name(),
             "error": str(exc),
         }
+
 
