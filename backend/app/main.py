@@ -7,13 +7,14 @@ import zipfile  # creates and reads ZIP archives
 import threading  # runs and coordinates threads
 import time  # measures time, delays, and elapsed seconds
 import re  # matches and cleans text with regular expressions
-from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, Header  # builds Python web APIs
+from fastapi import FastAPI, UploadFile, File, Form, Header  # builds Python web APIs
 from fastapi.responses import JSONResponse, FileResponse  # builds Python web APIs
 from src.services.pipeline_runner import PipelineRequest, run_clipforge_pipeline  # project pipeline runner
 from src.services.music_engine import pick_music_track  # project music selector
 from src.services.video_downloader import download_video_from_url  # project video downloader
 from fastapi.staticfiles import StaticFiles  # builds Python web APIs
 from src.services.font_manager import get_available_fonts  # project font manager
+from backend.app.queue import enqueue_clipforge_job, is_queue_job_active, queue_job_info, redis_health  # Redis/RQ job queue helpers
 from backend.app.auth_store import (  # project auth helpers
     authenticate_user,
     create_session,
@@ -117,19 +118,35 @@ def _load_jobs_registry():  # loads required data/settings into memory
     except (OSError, json.JSONDecodeError):
         return
 
-    if not isinstance(saved_jobs, dict):
-        return
+    if isinstance(saved_jobs, dict):
+        JOBS.clear()
+        JOBS.update(saved_jobs)
 
-    JOBS.update(saved_jobs)
+def _refresh_jobs_registry():  # reloads worker-written queue progress from disk before status/result reads
+    _load_jobs_registry()
+
+def _recover_orphaned_active_jobs():  # marks interrupted legacy active jobs while preserving queued RQ jobs
     changed = False
-    for job in JOBS.values():
-        if job.get("status") in {"queued", "processing"}:
+    for job_id, job in JOBS.items():
+        if job.get("status") not in {"queued", "processing"}:
+            continue
+        if job.get("rq_job_id"):
+            info = queue_job_info(job_id, job.get("queue_name"))
+            job.update({key: value for key, value in info.items() if value is not None})
+            if info.get("queue_status") in {"failed", "stopped", "canceled"}:
+                job["status"] = "failed"
+                job["progress_failed"] = True
+                job["progress_label"] = "Failed"
+                job["error"] = "Queued job stopped before completion. Resume this job to enqueue it again."
+            changed = True
+            continue
+        if job.get("status") == "processing":
             job["status"] = "failed"
             job["progress_failed"] = True
             job["progress_label"] = "Interrupted"
             job["error"] = (
                 "Backend was stopped before this job finished. "
-                "Start the job again, or open results if an output folder was already created."
+                "Start the job again, or resume it from the saved input video."
             )
             changed = True
     if changed:
@@ -217,6 +234,7 @@ def _restore_job_from_disk(job_id: str) -> Optional[dict]:  # restores job statu
     _save_jobs_registry()
     return job
 def _get_or_restore_job(job_id: str) -> Optional[dict]:  # returns a saved job, or restores completed output from disk when registry state is stale
+    _refresh_jobs_registry()
     job = JOBS.get(job_id)
     if not job:
         return _restore_job_from_disk(job_id)
@@ -228,6 +246,7 @@ def _get_or_restore_job(job_id: str) -> Optional[dict]:  # returns a saved job, 
 
 
 _load_jobs_registry()
+_recover_orphaned_active_jobs()
 PlatformOption = Literal["youtube", "instagram", "tiktok"]
 AspectRatioOption = Literal["9:16", "16:9", "1:1", "4:5"]
 SegmentModeOption = Literal["semantic_ai", "fixed_duration", "manual", "raw_footage"]
@@ -700,6 +719,83 @@ def process_batch_job(batch_id: str, base_request: PipelineRequest, video_paths:
         batch["error"] = "All videos failed during batch processing."
     _save_jobs_registry()
 
+def _queue_unavailable_response(job_id: str, queue_result: dict) -> JSONResponse:  # returns a clear queue setup error instead of running heavy work inside FastAPI
+    error = queue_result.get("error") or "Redis/RQ queue is unavailable. Start Redis and the ClipForge worker, then try again."
+    if job_id in JOBS:
+        JOBS[job_id].update({
+            "status": "failed",
+            "queue_status": "unavailable",
+            "progress_failed": True,
+            "progress_label": "Queue unavailable",
+            "error": error,
+        })
+        _save_jobs_registry()
+    return JSONResponse(
+        {
+            "error": "Queue unavailable",
+            "details": error,
+            "job_id": job_id,
+            "redis_url": queue_result.get("redis_url"),
+            "queue_name": queue_result.get("queue_name"),
+        },
+        status_code=503,
+    )
+
+def _enqueue_saved_job(job_id: str, request: PipelineRequest, message: str):  # sends a saved single-video job to Redis/RQ while preserving API response shape
+    queue_result = enqueue_clipforge_job(job_id, _request_payload(request))
+    if not queue_result.get("ok"):
+        return _queue_unavailable_response(job_id, queue_result)
+    JOBS[job_id].update({
+        "status": "queued",
+        "queue_status": queue_result.get("queue_status", "queued"),
+        "queue_name": queue_result.get("queue_name"),
+        "queue_position": queue_result.get("queue_position"),
+        "rq_job_id": queue_result.get("rq_job_id"),
+        "progress_stage": 1,
+        "progress_label": "Job Queued",
+        "progress_failed": False,
+        "request_payload": _request_payload(request),
+    })
+    _save_jobs_registry()
+    return {
+        "message": message,
+        "job_id": job_id,
+        "status_url": f"/jobs/{job_id}",
+        "queue_status": JOBS[job_id].get("queue_status"),
+        "queue_position": JOBS[job_id].get("queue_position"),
+    }
+
+def _enqueue_saved_batch_job(batch_id: str, base_request: PipelineRequest, video_paths: List[Path], message: str):  # sends a saved batch job to Redis/RQ while preserving API response shape
+    queue_result = enqueue_clipforge_job(
+        batch_id,
+        _request_payload(base_request),
+        task_name="backend.app.job_tasks.run_clipforge_batch_job",
+        extra_args=[[str(path) for path in video_paths]],
+    )
+    if not queue_result.get("ok"):
+        return _queue_unavailable_response(batch_id, queue_result)
+    JOBS[batch_id].update({
+        "status": "queued",
+        "queue_status": queue_result.get("queue_status", "queued"),
+        "queue_name": queue_result.get("queue_name"),
+        "queue_position": queue_result.get("queue_position"),
+        "rq_job_id": queue_result.get("rq_job_id"),
+        "progress_stage": 1,
+        "progress_label": "Job Queued",
+        "progress_failed": False,
+        "request_payload": _request_payload(base_request),
+    })
+    _save_jobs_registry()
+    return {
+        "message": message,
+        "job_id": batch_id,
+        "batch_id": batch_id,
+        "type": "batch",
+        "total": len(video_paths),
+        "status_url": f"/jobs/{batch_id}",
+        "queue_status": JOBS[batch_id].get("queue_status"),
+        "queue_position": JOBS[batch_id].get("queue_position"),
+    }
 VIDEO_INPUT_EXTS = {".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v", ".mpeg", ".mpg", ".ogv"}
 def _safe_input_relative_path(value: str) -> str:  # validates a project input-library relative path
     clean = str(value or "").replace("\\", "/").strip("/")
@@ -741,7 +837,6 @@ def list_input_library():  # returns videos found in the local input library fol
 
 @app.post("/process-local-input")
 async def process_local_input(  # starts a job from a selected local input-library video
-    background_tasks: BackgroundTasks,
     local_input_path: str = Form(...),
 
     platform: PlatformOption = Form("youtube"),
@@ -805,17 +900,10 @@ async def process_local_input(  # starts a job from a selected local input-libra
         "request_payload": _request_payload(request),
     }
     _save_jobs_registry()
-    background_tasks.add_task(process_job, temp_job_id, request)
-
-    return {
-        "message": "Project input video selected. Processing started.",
-        "job_id": temp_job_id,
-        "status_url": f"/jobs/{temp_job_id}",
-    }
+    return _enqueue_saved_job(temp_job_id, request, "Project input video selected. Job queued.")
 
 @app.post("/process-upload")
 async def process_upload(  # accepts one uploaded video and starts its pipeline job
-    background_tasks: BackgroundTasks,
     video: UploadFile = File(...),
 
     platform: PlatformOption = Form("youtube"),
@@ -928,19 +1016,12 @@ async def process_upload(  # accepts one uploaded video and starts its pipeline 
     }
 
     _save_jobs_registry()
-    background_tasks.add_task(process_job, temp_job_id, request)
-
-    return {
-        "message": "Video uploaded successfully. Processing started.",
-        "job_id": temp_job_id,
-        "status_url": f"/jobs/{temp_job_id}",
-    }
+    return _enqueue_saved_job(temp_job_id, request, "Video uploaded successfully. Job queued.")
 
 
 
 @app.post("/process-batch-upload")
 async def process_batch_upload(  # accepts multiple uploaded videos and starts a batch job
-    background_tasks: BackgroundTasks,
     videos: List[UploadFile] = File(...),
 
     platform: PlatformOption = Form("youtube"),
@@ -1015,21 +1096,11 @@ async def process_batch_upload(  # accepts multiple uploaded videos and starts a
     }
 
     _save_jobs_registry()
-    background_tasks.add_task(process_batch_job, batch_id, base_request, saved_paths)
-
-    return {
-        "message": "Videos uploaded successfully. Batch processing started.",
-        "job_id": batch_id,
-        "batch_id": batch_id,
-        "type": "batch",
-        "total": len(saved_paths),
-        "status_url": f"/jobs/{batch_id}",
-    }
+    return _enqueue_saved_batch_job(batch_id, base_request, saved_paths, "Videos uploaded successfully. Batch job queued.")
 
 
 @app.post("/process-link")
 async def process_link(  # downloads a pasted link and starts a pipeline job from it
-    background_tasks: BackgroundTasks,
     video_url: str = Form(...),
 
     platform: PlatformOption = Form("youtube"),
@@ -1099,16 +1170,8 @@ async def process_link(  # downloads a pasted link and starts a pipeline job fro
     ),
 
 ):
-    try:
-        downloaded_video = download_video_from_url(video_url)
-    except Exception as e:
-        return JSONResponse(
-            {"error": "Failed to download video", "details": str(e)},
-            status_code=400,
-        )
-
     request = PipelineRequest(
-        input_video=str(downloaded_video),
+        input_video="",
         platform=platform,
         aspect_ratio=aspect_ratio,
         segment_mode=segment_mode,
@@ -1130,11 +1193,11 @@ async def process_link(  # downloads a pasted link and starts a pipeline job fro
         music_track=_validated_music_track(music_category, music_track),
     )
 
-    temp_job_id = _new_single_job_id(downloaded_video.stem)
+    temp_job_id = _new_single_job_id("linked_video")
 
     JOBS[temp_job_id] = {
         "status": "queued",
-        "input_video": str(downloaded_video),
+        "input_video": "",
         "source_url": video_url,
         "progress_stage": 1,
         "progress_label": "Job Queued",
@@ -1143,18 +1206,34 @@ async def process_link(  # downloads a pasted link and starts a pipeline job fro
     }
 
     _save_jobs_registry()
-    background_tasks.add_task(process_job, temp_job_id, request)
-
+    queue_result = enqueue_clipforge_job(
+        temp_job_id,
+        _request_payload(request),
+        task_name="backend.app.job_tasks.run_clipforge_link_job",
+        extra_args=[video_url],
+    )
+    if not queue_result.get("ok"):
+        return _queue_unavailable_response(temp_job_id, queue_result)
+    JOBS[temp_job_id].update({
+        "status": "queued",
+        "queue_status": queue_result.get("queue_status", "queued"),
+        "queue_name": queue_result.get("queue_name"),
+        "queue_position": queue_result.get("queue_position"),
+        "rq_job_id": queue_result.get("rq_job_id"),
+    })
+    _save_jobs_registry()
     return {
-        "message": "Video downloaded successfully. Processing started.",
+        "message": "Video link submitted. Job queued.",
         "job_id": temp_job_id,
         "status_url": f"/jobs/{temp_job_id}",
+        "queue_status": JOBS[temp_job_id].get("queue_status"),
+        "queue_position": JOBS[temp_job_id].get("queue_position"),
     }
 
 
 
 @app.post("/jobs/{job_id}/resume")
-def resume_job(job_id: str, background_tasks: BackgroundTasks):  # reloads saved job progress/results after page refresh or backend restart
+def resume_job(job_id: str):  # reloads saved job progress/results after page refresh or backend restart
     job = _get_or_restore_job(job_id)
     if not job:
         return JSONResponse({"error": "Job not found"}, status_code=404)
@@ -1162,13 +1241,77 @@ def resume_job(job_id: str, background_tasks: BackgroundTasks):  # reloads saved
     if job.get("status") == "completed":
         return {"message": "Job already completed.", "job_id": job_id, "status": "completed", "job": job}
 
+    if job.get("type") == "batch":
+        if is_queue_job_active(job_id, job.get("queue_name")):
+            return {
+                "message": "Batch job is already queued or processing.",
+                "job_id": job_id,
+                "batch_id": job_id,
+                "type": "batch",
+                "status": job.get("status", "queued"),
+                "queue_status": job.get("queue_status"),
+            }
+        payload = job.get("request_payload") or {}
+        uploads = [Path(path) for path in job.get("uploads", []) if path]
+        if not isinstance(payload, dict) or not payload:
+            return JSONResponse({"error": "No saved batch settings found for this job."}, status_code=400)
+        if not uploads:
+            return JSONResponse({"error": "No saved batch input videos found for this job."}, status_code=400)
+        missing = [str(path) for path in uploads if not path.exists()]
+        if missing:
+            return JSONResponse({"error": "Batch input video not found", "missing": missing[:5]}, status_code=404)
+        base_request = PipelineRequest(**payload)
+        JOBS[job_id].update({
+            "status": "queued",
+            "progress_stage": 1,
+            "progress_label": "Job Queued",
+            "progress_failed": False,
+            "error": "",
+            "request_payload": _request_payload(base_request),
+        })
+        _save_jobs_registry()
+        response = _enqueue_saved_batch_job(job_id, base_request, uploads, "Batch job resumed and queued.")
+        if isinstance(response, JSONResponse):
+            return response
+        response["status"] = "queued"
+        return response
     request = _request_from_job(job)
+    if not request and job.get("source_url") and isinstance(job.get("request_payload"), dict):
+        if is_queue_job_active(job_id, job.get("queue_name")):
+            return {"message": "Job is already queued or processing.", "job_id": job_id, "status": job.get("status", "queued"), "queue_status": job.get("queue_status")}
+        JOBS[job_id].update({
+            "status": "queued",
+            "progress_stage": 1,
+            "progress_label": "Job Queued",
+            "progress_failed": False,
+            "error": "",
+        })
+        _save_jobs_registry()
+        queue_result = enqueue_clipforge_job(
+            job_id,
+            job.get("request_payload", {}),
+            task_name="backend.app.job_tasks.run_clipforge_link_job",
+            extra_args=[job.get("source_url")],
+        )
+        if not queue_result.get("ok"):
+            return _queue_unavailable_response(job_id, queue_result)
+        JOBS[job_id].update({
+            "queue_status": queue_result.get("queue_status", "queued"),
+            "queue_name": queue_result.get("queue_name"),
+            "queue_position": queue_result.get("queue_position"),
+            "rq_job_id": queue_result.get("rq_job_id"),
+        })
+        _save_jobs_registry()
+        return {"message": "Link job resumed and queued.", "job_id": job_id, "status": "queued", "queue_status": JOBS[job_id].get("queue_status")}
     if not request:
         return JSONResponse({"error": "No input video saved for this job."}, status_code=400)
 
     input_path = Path(request.input_video)
     if not input_path.exists():
         return JSONResponse({"error": f"Input video not found: {input_path}"}, status_code=404)
+
+    if is_queue_job_active(job_id, job.get("queue_name")):
+        return {"message": "Job is already queued or processing.", "job_id": job_id, "status": job.get("status", "queued"), "queue_status": job.get("queue_status")}
 
     JOBS[job_id].update({
         "status": "queued",
@@ -1179,8 +1322,11 @@ def resume_job(job_id: str, background_tasks: BackgroundTasks):  # reloads saved
         "request_payload": _request_payload(request),
     })
     _save_jobs_registry()
-    background_tasks.add_task(process_job, job_id, request)
-    return {"message": "Job resumed by starting a backend run for the saved input video.", "job_id": job_id, "status": "queued"}
+    response = _enqueue_saved_job(job_id, request, "Job resumed and queued.")
+    if isinstance(response, JSONResponse):
+        return response
+    response["status"] = "queued"
+    return response
 
 @app.get("/jobs/{job_id}")
 def get_job_status(job_id: str):  # returns a resolved value used by later code
@@ -1195,7 +1341,14 @@ def get_job_status(job_id: str):  # returns a resolved value used by later code
             status_code=404,
         )
 
+    if job.get("rq_job_id"):
+        job.update(queue_job_info(job_id, job.get("queue_name")))
     return job
+
+@app.get("/queue/health")
+def get_queue_health():  # reports Redis/RQ availability for local setup checks
+    return redis_health()
+
 def _collect_result_files_from_output_dirs(output_dirs: List[Path]):  # collects shorts, thumbnails, metadata, reports, and ZIP paths for results UI
     shorts = []
     metadata = []
@@ -1356,6 +1509,21 @@ def list_fonts():  # returns local caption fonts available to the frontend
     return {
         "fonts": get_available_fonts()
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

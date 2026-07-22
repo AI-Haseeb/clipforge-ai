@@ -231,14 +231,25 @@ def _best_keyword(hits: List[Tuple[str, float]]) -> Optional[str]:  # chooses th
     return hits[0][0] if hits else None
 def _topic_vibe(hits: List[Tuple[str, float]], text: str = "") -> str:  # detects the content tone so metadata does not become generic or wrong
     blob = " ".join([_norm(k) for k, _ in hits] + [_norm(text)])
-    if any(x in blob for x in ["funny", "comedy", "joke", "laugh", "meme", "mazak", "mazaq", "hansi", "hasna", "jugtain", "comic"]):
+    if any(x in blob for x in ["funny", "comedy", "joke", "laugh", "meme", "mazak", "mazaq", "hansi", "hasna", "jugtain", "comic", "roast", "prank"]):
         return "funny"
-    if any(x in blob for x in ["sad", "pain", "heart", "lonely", "cry", "tears", "breakup", "depressed", "dard", "dukhi"]):
-        return "emotional"
-    if any(x in blob for x in ["business", "marketing", "sales", "clients", "growth", "money", "income"]):
+    if any(x in blob for x in ["tutorial", "how to", "step", "guide", "learn", "setup", "sikh", "seekho"]):
+        return "tutorial"
+    if any(x in blob for x in ["education", "educational", "explain", "lesson", "understand", "samjho", "knowledge", "history", "science"]):
+        return "educational"
+    if any(x in blob for x in ["business", "marketing", "sales", "clients", "growth", "money", "income", "revenue", "profit", "brand"]):
         return "business"
+    if any(x in blob for x in ["motivation", "motivational", "success", "discipline", "mindset", "goal", "dream", "hard work"]):
+        return "motivational"
+    if any(x in blob for x in ["game", "gaming", "player", "level", "match", "rank", "stream"]):
+        return "gaming"
+    if any(x in blob for x in ["news", "breaking", "report", "today", "headline", "update"]):
+        return "news"
+    if any(x in blob for x in ["sad", "pain", "heart", "lonely", "cry", "tears", "breakup", "depressed", "dard", "dukhi", "rona", "tanhai"]):
+        return "emotional"
+    if any(x in blob for x in ["podcast", "interview", "conversation", "guest", "host", "episode"]):
+        return "podcast"
     return "general"
-
 
 # -------------------------
 def _settings_topic_text(settings: Optional[dict]) -> str:  # collects user-selected style/category hints for metadata tone
@@ -250,6 +261,65 @@ def _settings_topic_text(settings: Optional[dict]) -> str:  # collects user-sele
         if isinstance(value, str) and value.strip():
             values.append(value.strip())
     return " ".join(values)
+
+def _metadata_content_profile(
+    *,
+    segment_text: str,
+    hits: List[Tuple[str, float]],
+    lang: str,
+    settings: Optional[dict],
+) -> Dict[str, Any]:
+    settings_hint = _settings_topic_text(settings)
+    category = _topic_vibe(hits, f"{segment_text} {settings_hint}")
+    if isinstance(settings, dict):
+        selected = str(settings.get("content_category", "") or "").strip().lower()
+        style = str(settings.get("editing_style_selected", "") or "").strip().lower()
+        for candidate in (style, selected):
+            if candidate in {
+                "funny", "meme", "educational", "tutorial", "business", "marketing",
+                "motivational", "gaming", "news", "podcast", "sad", "romantic",
+                "love", "horror", "documentary", "lifestyle", "fitness", "cinematic",
+            }:
+                category = "emotional" if candidate in {"sad", "romantic", "love"} else candidate
+                break
+
+    tone_map = {
+        "funny": "witty, playful, punchline-focused",
+        "meme": "fast, meme-like, shareable",
+        "educational": "clear, useful, explanatory",
+        "tutorial": "direct, step-by-step, helpful",
+        "business": "practical, growth-focused, credible",
+        "marketing": "sharp, high-retention, creator-business focused",
+        "motivational": "energetic, inspiring, action-focused",
+        "gaming": "high-energy and gaming-native",
+        "news": "clear, factual, update-focused",
+        "podcast": "conversational and insight-focused",
+        "emotional": "sincere and story-driven",
+        "horror": "suspenseful, tense, curiosity-focused",
+        "documentary": "story-led and factual",
+        "lifestyle": "natural, personal, relatable",
+        "fitness": "energetic and action-focused",
+        "cinematic": "dramatic but still relevant to the clip",
+        "general": "specific, simple, and watchable",
+    }
+    forbidden_map = {
+        "funny": "Do not make it sad, heartbreak, pain, motivational, or emotional unless the transcript clearly says that.",
+        "meme": "Do not make it serious or sad; keep it playful and viral.",
+        "business": "Do not make it emotional; focus on practical result, growth, clients, money, or strategy.",
+        "marketing": "Do not make it emotional; focus on hooks, attention, audience, sales, or creator growth.",
+        "educational": "Do not exaggerate or make it clickbait; keep it useful and clear.",
+        "tutorial": "Do not make it emotional; keep it direct and practical.",
+        "news": "Do not invent claims; keep it factual and careful.",
+    }
+    return {
+        "category": category,
+        "tone": tone_map.get(category, tone_map["general"]),
+        "language": "Roman Urdu/Hindi/Punjabi in English letters" if lang == "roman" else "English",
+        "forbidden": forbidden_map.get(category, "Do not add a different emotion or topic that is not present in the transcript."),
+        "style": str(settings.get("editing_style_selected", "none") if isinstance(settings, dict) else "none") or "none",
+        "keywords": [k for k, _ in hits[:8]],
+    }
+
 # Description + Emojis + Hashtags
 # -------------------------
 def _clean_spaces(text: str) -> str:  # collapses extra whitespace in transcript/metadata text
@@ -475,7 +545,16 @@ def _hashtags_from_any(*, description: str, hits: List[Tuple[str, float]], platf
         tag = _normalize_hashtag(raw)
         if tag and tag not in tags:
             tags.append(tag)
-    pads = ["#shorts", "#viral", "#reels", "#contentcreator", "#motivation", "#mindset", "#learning", "#growth"]
+    vibe = _topic_vibe(hits, description)
+    pads_by_vibe = {
+        "funny": ["#shorts", "#viral", "#reels", "#funny", "#comedy", "#desicomedy", "#reaction", "#funnyshorts"],
+        "meme": ["#shorts", "#viral", "#reels", "#meme", "#reaction", "#trending"],
+        "business": ["#shorts", "#viral", "#business", "#marketing", "#growth", "#creator", "#sales"],
+        "marketing": ["#shorts", "#viral", "#marketing", "#contentcreator", "#hooks", "#socialmedia", "#growth"],
+        "educational": ["#shorts", "#learn", "#education", "#knowledge", "#explained", "#learning"],
+        "tutorial": ["#shorts", "#tutorial", "#howto", "#learn", "#tips", "#guide"],
+    }
+    pads = pads_by_vibe.get(vibe, ["#shorts", "#viral", "#reels", "#contentcreator", "#learning", "#growth"])
     for raw in pads:
         if len(tags) >= limit:
             break
@@ -520,6 +599,8 @@ def _openai_chat_enhance_meta(  # uses OpenAI Chat Completions to improve metada
     model = _openai_chat_model_name(settings)
     lang_rule = "Write in Roman Urdu/Hindi using English letters only." if lang == "roman" else "Write in natural English."
     hits_str = ", ".join([k for k, _ in hits][:8])
+    profile = _metadata_content_profile(segment_text=segment_text, hits=hits, lang=lang, settings=settings)
+    profile_json = json.dumps(profile, ensure_ascii=False)
 
     prompt = f"""
 Create short-form social media metadata for {platform}.
@@ -528,6 +609,10 @@ Rules:
 - {lang_rule}
 - Return only valid JSON. No markdown, no asterisks, no bullets outside JSON.
 - Keep text simple, human, creator-friendly, and specific to the segment.
+- Follow this content profile exactly: {profile_json}
+- Tone must match content_profile.tone and content_profile.category.
+- {profile["forbidden"]}
+- If the category is funny or meme, use comedy/reaction/punchline language, not pain/sadness.
 - Title max 70 characters.
 - Give exactly 5 hooks, each max 80 characters.
 - Description must be 3 short plain-text lines plus 1 CTA line.
@@ -545,7 +630,7 @@ Return JSON exactly like this:
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": "You create clean short-form metadata. Return JSON only."},
+            {"role": "system", "content": "You create clean short-form metadata from transcript and style context. Return JSON only."},
             {"role": "user", "content": prompt},
         ],
         "temperature": 0.7,
@@ -716,7 +801,8 @@ def _ensure_desc_structure(desc: str, *, platform: str, lang: str, hits: List[Tu
             new_body.append(clean)
     body_lines = [ln for ln in new_body if ln]
 
-    vibe = _topic_vibe(hits, desc)
+    profile = _metadata_content_profile(segment_text=desc, hits=hits, lang=lang, settings=settings)
+    vibe = str(profile.get("category", "general") or "general")
     if len(body_lines) == 0:
         body_lines = [
             "Yeh clip ka best moment hai.",
@@ -729,9 +815,9 @@ def _ensure_desc_structure(desc: str, *, platform: str, lang: str, hits: List[Tu
         ]
     elif len(body_lines) == 1:
         if vibe == "funny" and lang == "roman":
-            extra = ["Comedy timing aur reaction is clip ka main maza hai.", "Agar yeh scene funny laga to share zaroor karna."]
+            extra = ["Comedy timing aur reaction is clip ka main maza hai.", "Punchline aur reaction dono clip ko memorable banate hain."]
         elif vibe == "funny":
-            extra = ["The timing and reaction make this moment work.", "Share it if this scene made you smile."]
+            extra = ["The timing and reaction make this moment work.", "The punchline keeps the scene memorable."]
         elif lang == "roman":
             extra = ["Isi moment ka context clip ko strong banata hai.", "End tak dekho taake point clear ho."]
         else:
@@ -796,8 +882,10 @@ def _openai_enhance_meta(  # uses the OpenAI SDK to improve metadata in direct m
 
     hits_list = [k for k, _ in hits][:8]
     hits_str = ", ".join(hits_list)
+    profile = _metadata_content_profile(segment_text=segment_text, hits=hits, lang=lang, settings=settings)
+    profile_json = json.dumps(profile, ensure_ascii=False)
 
-    # âœ… strict json output
+    # strict json output
     # âœ… description: 3 body lines + CTA + 15â€“20 tags
     prompt = f"""
 You are optimizing short-form social metadata for {platform}.
@@ -806,6 +894,10 @@ Rules:
 - {lang_rule}
 - MUST relate to the given segment text (same meaning/vibe), but DO NOT copy exact phrases.
 - Be specific to the topic of the segment (not generic).
+- Follow this content profile exactly: {profile_json}
+- Tone must match content_profile.tone and content_profile.category.
+- {profile["forbidden"]}
+- If the category is funny or meme, use comedy/reaction/punchline language, not pain/sadness.
 - Title max 70 chars.
 - Hooks: EXACTLY 5 options, each max 80 chars, distinct, high-retention.
 - Description MUST be:
@@ -911,77 +1003,154 @@ def generate_hooks_titles_description(  # creates title, hook, description, and 
     settings: Optional[dict] = None,
 ) -> Dict[str, Any]:
     segment_text = _collapse_repeated_text(segment_text)
-    settings_hint = _settings_topic_text(settings)
-    vibe = _topic_vibe(hits, f"{segment_text} {settings_hint}")
+    profile = _metadata_content_profile(segment_text=segment_text, hits=hits, lang=lang, settings=settings)
+    vibe = str(profile.get("category", "general") or "general")
     tpl = _templates(lang)
     best_kw = _best_keyword(hits)
 
-    hooks: List[str] = []
+    roman_bank = {
+        "funny": {
+            "title": "Mazay Ka Scene - Timing Dekho",
+            "hooks": ["Yeh scene miss mat karna.", "Comedy timing yahan zabardast hai.", "End tak dekho, maza yahin hai.", "Is reaction pe hansi aa jaye gi.", "Dost ko tag karo jisay yeh funny lage."],
+            "seed": "Yeh comedy clip ka funny moment hai. Reaction aur timing is scene ko mazaydar banate hain.",
+            "cta": "Share karo agar yeh scene funny laga.",
+        },
+        "business": {
+            "title": "Business Growth Ka Real Point",
+            "hooks": ["Yeh business point miss mat karna.", "Growth ke liye yeh baat zaroori hai.", "Clients aur sales ka real lesson yahan hai.", "Is strategy ko save kar lo.", "Agar business grow karna hai to yeh dekho."],
+            "seed": "Yeh clip business growth aur strategy ka useful point clear karti hai.",
+            "cta": "Save kar lo aur next idea ke liye follow karo.",
+        },
+        "marketing": {
+            "title": "Marketing Ka Strong Hook",
+            "hooks": ["Yeh marketing hook kaam aa sakta hai.", "Audience attention yahin se pakarti hai.", "Is point ko content mein apply karo.", "Sales aur reach ke liye yeh dekho.", "Creator growth ka yeh useful moment hai."],
+            "seed": "Yeh clip marketing, hooks aur audience attention ka practical point deti hai.",
+            "cta": "Save karo aur apni next video mein try karo.",
+        },
+        "educational": {
+            "title": "Yeh Concept Asan Ho Gaya",
+            "hooks": ["Yeh concept simple tareeqe se samjho.", "Is example se point clear hota hai.", "Seekhne wali baat yahan hai.", "End tak dekho taake idea clear ho.", "Is lesson ko save kar lo."],
+            "seed": "Yeh clip ek useful concept ko simple aur clear tareeqe se explain karti hai.",
+            "cta": "Helpful lage to save aur share karo.",
+        },
+        "tutorial": {
+            "title": "Is Step Ko Follow Karo",
+            "hooks": ["Yeh step miss mat karna.", "Kaam asan karne ka tareeqa yeh hai.", "Is process ko follow karo.", "Beginner ke liye yeh useful hai.", "Save kar lo taake baad mein dekh sako."],
+            "seed": "Yeh clip process ka useful step explain karti hai jo follow karna asan hai.",
+            "cta": "Save karo aur try kar ke dekho.",
+        },
+        "emotional": {
+            "title": "Dil Ko Lag Jane Wala Moment",
+            "hooks": ["Yeh moment feel hota hai.", "Is scene ki baat dil ko lagti hai.", "End tak dekho, emotion yahin hai.", "Yeh line yaad reh jaye gi.", "Agar relate karte ho to share karo."],
+            "seed": "Yeh clip ek emotional moment ko simple aur relatable tareeqe se dikhati hai.",
+            "cta": "Agar relate kiya to share karna.",
+        },
+    }
+    english_bank = {
+        "funny": {
+            "title": "Funny Moment - Perfect Timing",
+            "hooks": ["Do not miss this moment.", "The comedy timing makes this clip.", "Watch till the end for the payoff.", "This reaction is the whole joke.", "Send this to someone who loves comedy."],
+            "seed": "This comedy clip works because of the reaction and timing.",
+            "cta": "Share this if the scene made you laugh.",
+        },
+        "business": {
+            "title": "Business Growth Lesson",
+            "hooks": ["This business point is worth saving.", "Here is the practical growth lesson.", "This is how creators think about clients.", "Save this strategy for later.", "Watch this before your next business move."],
+            "seed": "This clip highlights a practical business growth lesson from the segment.",
+            "cta": "Save this and share it with a creator or founder.",
+        },
+        "marketing": {
+            "title": "Marketing Hook That Works",
+            "hooks": ["This hook can improve your content.", "Audience attention starts here.", "Use this idea in your next post.", "This is a useful marketing moment.", "Creators should save this one."],
+            "seed": "This clip focuses on marketing, hooks, and audience attention.",
+            "cta": "Save this and try it in your next video.",
+        },
+        "educational": {
+            "title": "Simple Lesson Explained",
+            "hooks": ["This makes the concept easier.", "The example explains the whole point.", "Save this lesson for later.", "Watch this if you want clarity.", "This is the useful part of the clip."],
+            "seed": "This clip explains a useful idea in a simple and clear way.",
+            "cta": "Save this if it helped you understand the point.",
+        },
+        "tutorial": {
+            "title": "Follow This Simple Step",
+            "hooks": ["Do not skip this step.", "This makes the process easier.", "Follow this if you are starting out.", "Save this quick walkthrough.", "Try this in your next project."],
+            "seed": "This clip shows a practical step that is easy to follow.",
+            "cta": "Save this and try it yourself.",
+        },
+        "emotional": {
+            "title": "Emotional Moment That Hits",
+            "hooks": ["This moment feels real.", "The story lands right here.", "Watch till the emotion hits.", "This line stays with you.", "Share this if you relate."],
+            "seed": "This clip captures an emotional and relatable moment from the story.",
+            "cta": "Share this with someone who will relate.",
+        },
+    }
 
-    if best_kw:
+    bank = roman_bank if lang == "roman" else english_bank
+    alias = {
+        "meme": "funny",
+        "news": "educational",
+        "podcast": "educational",
+        "documentary": "educational",
+        "sad": "emotional",
+        "romantic": "emotional",
+        "love": "emotional",
+        "motivational": "business",
+        "gaming": "funny",
+        "horror": "emotional",
+        "lifestyle": "educational",
+        "fitness": "motivational",
+        "cinematic": "emotional",
+    }
+    selected = bank.get(vibe) or bank.get(alias.get(vibe, ""))
+    if selected is None:
+        selected = {
+            "title": tpl["titles"][0],
+            "hooks": tpl["hooks"],
+            "seed": segment_text,
+            "cta": tpl["cta"][0],
+        }
+
+    hooks: List[str] = []
+    if best_kw and vibe not in {"funny", "meme", "emotional"}:
         if lang == "roman":
             hooks.extend([
-                f"Ruk jao â€” '{best_kw}' wali baat bohat important hai.",
-                f"'{best_kw}' ka real scene yeh hai.",
-                f"Aksar log '{best_kw}' ko galat samajhte hain.",
+                f"{best_kw.title()} ka real point yeh hai.",
+                f"{best_kw.title()} wali baat miss mat karna.",
             ])
         else:
             hooks.extend([
-                f"Stop scrolling â€” this '{best_kw}' part is important.",
-                f"Hereâ€™s the truth about '{best_kw}'.",
-                f"Most people get '{best_kw}' wrong.",
+                f"Here is the real point about {best_kw}.",
+                f"Do not miss this {best_kw} moment.",
             ])
-
-    hooks.extend(tpl["hooks"])
+    hooks.extend(selected["hooks"])
 
     seen = set()
     uniq_hooks: List[str] = []
     for h in hooks:
-        hh = _norm(h)
-        if hh in seen:
+        clean = _strip_markdown_noise(str(h))
+        hh = _norm(clean)
+        if not clean or hh in seen:
             continue
         seen.add(hh)
-        uniq_hooks.append(h)
+        uniq_hooks.append(clean)
         if len(uniq_hooks) >= max_hooks:
             break
 
-    # Title
-    if not best_kw and vibe == "funny":
-        title = "Mazay Ka Scene - Yeh Moment Dekho" if lang == "roman" else "Funny Moment - Watch This"
-        uniq_hooks = ([
-            "Yeh scene miss mat karna.",
-            "Comedy timing yahan zabardast hai.",
-            "End tak dekho, maza yahin hai.",
-            "Is reaction pe hansi aa jaye gi.",
-            "Dost ko tag karo jisay yeh funny lage.",
-        ] if lang == "roman" else [
-            "Do not miss this moment.",
-            "The comedy timing makes this clip.",
-            "Watch till the end for the payoff.",
-            "This reaction is the whole joke.",
-            "Send this to someone who loves comedy.",
-        ])[:max_hooks]
-    elif best_kw:
-        if lang == "roman":
-            title = f"{best_kw.title()} â€” Yeh Point Miss Mat Karna"
-        else:
-            title = f"{best_kw.title()} â€” Donâ€™t Miss This"
-        title = title.strip()
-        if len(title) > 70:
-            title = title[:70].rstrip()
-    else:
-        title = tpl["titles"][0]
+    title = str(selected["title"])
+    if best_kw and vibe in {"business", "marketing", "educational", "tutorial"}:
+        title = f"{best_kw.title()} - {title}"[:70].rstrip()
 
     description = _build_description(
-        segment_text=("Yeh comedy clip ka funny moment hai. Reaction aur timing is scene ko mazaydar banate hain." if vibe == "funny" and lang == "roman" else "This comedy clip has a funny moment. The reaction and timing make the scene work." if vibe == "funny" else segment_text),
+        segment_text=str(selected.get("seed") or segment_text),
         lang=lang,
-        cta=tpl["cta"][0],
+        cta=str(selected.get("cta") or tpl["cta"][0]),
         hits=hits,
         platform=platform,
         max_sentences=3,
     )
+    description = _ensure_desc_structure(description, platform=platform, lang=lang, hits=hits, settings=settings)
 
-    out = {"hooks": uniq_hooks, "title": title, "description": description}
+    out = {"hooks": uniq_hooks, "title": title[:70].rstrip(), "description": description}
 
     if _is_openai_chat_meta_enabled(settings):
         improved = _openai_chat_enhance_meta(
@@ -1015,6 +1184,7 @@ def generate_hooks_titles_description(  # creates title, hook, description, and 
             print(f"[meta-ai] OFF: enabled={enabled} enhance_meta={enhance} allow_local={allow_local}")
 
     return out
+
 def write_meta_txt(  # writes the metadata text file for one generated short
     out_path: Path,
     title: str,
@@ -1072,6 +1242,18 @@ def write_meta_txt(  # writes the metadata text file for one generated short
         lines.append("- (none)")
 
     out_path.write_text("\n".join(lines), encoding="utf-8")
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

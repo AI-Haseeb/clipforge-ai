@@ -23,3 +23,5 @@ Unidecode
 flask
 flask-cors
 customtkinter
+redis
+rq
