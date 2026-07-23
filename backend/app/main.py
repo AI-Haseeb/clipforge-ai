@@ -765,6 +765,28 @@ def _enqueue_saved_job(job_id: str, request: PipelineRequest, message: str):  # 
         "queue_position": JOBS[job_id].get("queue_position"),
     }
 
+def _start_local_link_job(job_id: str, request_payload: dict, video_url: str) -> None:  # starts a pasted-link job in a local background thread when Redis is unavailable
+    def _runner() -> None:
+        try:
+            from backend.app.job_tasks import run_clipforge_link_job  # runs the same link task used by the RQ worker
+
+            run_clipforge_link_job(job_id, request_payload, video_url)
+        except Exception as exc:
+            _refresh_jobs_registry()
+            if job_id in JOBS:
+                JOBS[job_id].update({
+                    "status": "failed",
+                    "queue_status": "local_failed",
+                    "progress_failed": True,
+                    "progress_label": "Failed",
+                    "error": f"Local link job failed: {exc}",
+                })
+                _save_jobs_registry()
+
+    thread = threading.Thread(target=_runner, name=f"clipforge-link-{job_id[:24]}", daemon=True)
+    thread.start()
+
+
 def _enqueue_saved_batch_job(batch_id: str, base_request: PipelineRequest, video_paths: List[Path], message: str):  # sends a saved batch job to Redis/RQ while preserving API response shape
     queue_result = enqueue_clipforge_job(
         batch_id,
@@ -1205,15 +1227,34 @@ async def process_link(  # downloads a pasted link and starts a pipeline job fro
         "request_payload": _request_payload(request),
     }
 
+    request_payload = _request_payload(request)
     _save_jobs_registry()
     queue_result = enqueue_clipforge_job(
         temp_job_id,
-        _request_payload(request),
+        request_payload,
         task_name="backend.app.job_tasks.run_clipforge_link_job",
         extra_args=[video_url],
     )
     if not queue_result.get("ok"):
-        return _queue_unavailable_response(temp_job_id, queue_result)
+        JOBS[temp_job_id].update({
+            "status": "queued",
+            "queue_status": "local_thread",
+            "queue_name": "local",
+            "queue_position": None,
+            "progress_stage": 1,
+            "progress_label": "Downloading video",
+            "progress_failed": False,
+            "queue_fallback_reason": queue_result.get("error") or "Redis/RQ queue unavailable",
+        })
+        _save_jobs_registry()
+        _start_local_link_job(temp_job_id, request_payload, video_url)
+        return {
+            "message": "Video link submitted. Running locally because Redis queue is unavailable.",
+            "job_id": temp_job_id,
+            "status_url": f"/jobs/{temp_job_id}",
+            "queue_status": JOBS[temp_job_id].get("queue_status"),
+            "queue_position": None,
+        }
     JOBS[temp_job_id].update({
         "status": "queued",
         "queue_status": queue_result.get("queue_status", "queued"),
