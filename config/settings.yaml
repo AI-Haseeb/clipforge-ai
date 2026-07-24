@@ -1,0 +1,316 @@
+﻿# =================================
+# ClipForge AI â€” Settings (Roman Flow)
+# =================================
+
+# -----------------
+# Input & Runtime
+# -----------------
+video_extensions: [".mp4", ".mov", ".mkv", ".m4v", ".webm"]
+max_workers: 5
+enable_gpu_acceleration: auto   # auto = use CUDA GPU if available, otherwise CPU fallback
+
+# -----------------
+# Run Mode (Global)
+# -----------------
+run_mode: "fast"  # fast | balanced | quality
+
+
+# -----------------
+# Performance limits for i5-6600 / 16GB RAM / weak GPU
+# -----------------
+performance:
+  max_short_workers: 3
+  max_ffmpeg_workers: 2
+  max_whisper_workers: 1
+  max_thumbnail_ai_workers: 1
+
+# -----------------
+# Shorts Rules
+# -----------------
+short_min_seconds: 30
+short_max_seconds: 60
+max_shorts: 10
+
+# -----------------
+# Whisper (auto GPU/CPU)
+# -----------------
+# NOTE:
+#   Whisper model + compute_type code ke andar lock hain:
+#      model = "small"
+#      device = "cpu"
+#      compute_type = "int8"
+#   Yahan se model select/change nahi hota, sirf behaviour tune hoga
+#   (beam size, batch size, prompt, temperature, etc).
+whisper_model: "small"
+whisper_device: "auto"          # auto | cpu | cuda
+whisper_batch_size: 16
+whisper_compute_type_cpu: "int8"
+whisper_compute_type_cuda: "float16"
+whisper_compute_type: "int8"    # legacy fallback for CPU
+
+# ðŸ”½ Accuracy controls (used by transcribe_whisper.py)
+whisper_beam_size: 5                 # transcribe ke liye
+whisper_beam_size_translate: 10      # translate ke liye thora zyada search
+
+# domain prompt (optional â€“ apni video type ke hisaab se change kar sakte ho)
+whisper_initial_prompt: "This is a motivational talk about learning English, fluency, pronunciation, grammar, confidence, and practice."
+
+whisper_temperature: 0.0             # 0 = deterministic, zyada accurate
+whisper_condition_on_previous: false # hallucination kam rakhne ke liye
+
+# -----------------
+# Captions Policy
+# -----------------
+# ðŸ‘‡ NEW: yahi block main.py use karta hai
+captions:
+  enabled: true          # captions ON
+  uppercase: false       # ALL CAPS off
+  italic: false          # italic off
+  # + timing bias (speech se thora sa pehle dikhana)
+  start_bias_sec: 0.0    # exact speech timing; strict mode does not show captions early
+
+  # info-only (abhi code direct use nahi kar raha, future use):
+  output_style: "auto"   # "auto" = EN video -> EN, UR/HI/Punjabi/mixed -> Roman when enabled
+  strict_timing: true     # use Whisper source timings so captions appear only when speech is active
+  max_short_caption_duration_sec: 4.0
+  max_caption_duration_sec: 6.5
+
+# â›” OLD FLAT KEYS (REFERENCE ONLY â€” code ab inko use nahi kar raha)
+# captions_enabled: false
+# translate_captions_to_english: true
+# captions_output_style: "roman"
+# caption_start_bias_sec: 0.00
+
+# -----------------
+# Captions (ASS visual style)
+# -----------------
+caption_style:
+  font_name: "Montserrat"
+  uppercase: false
+  italic: false
+  position: "bottom_center"
+  strict_timing: true
+
+
+  small_size: 60
+  medium_size: 62
+  big_size: 62
+
+  margin_v: 180
+  margin_l: 90
+  char_spacing: 10
+  outline: 4
+
+  silence_autohide: true
+  new_sentence_on_silence: true
+  random_pattern_enabled: true
+  fade_in_ms: 50
+  fade_out_ms: 50
+
+# -----------------
+# META POLICY
+# -----------------
+# âœ… Base transcript for meta should be English (Whisper translate)
+meta_always_english: true
+
+# âœ… Final meta output style (PAID user choice)
+# - "en"    => output in English
+# - "roman" => output in Roman Urdu/Hindi (English letters)
+meta_output_style: "auto"
+
+# OpenAI LLM settings used for metadata, thumbnail prompt briefs, and Roman caption cleanup.
+# Paste your OpenAI key in config/openai_api_key.txt, or set OPENAI_API_KEY.
+# If the key is missing or the API fails, ClipForge keeps using local fallbacks.
+openai_llm:
+  enabled: true
+  api_key_file: "config/openai_api_key.txt"
+  api_key_env: "OPENAI_API_KEY"
+  model: "gpt-4o-mini"
+
+# Metadata enhancer using OpenAI LLM with local fallback.
+openai_meta:
+  enabled: true
+  api_key_file: "config/openai_api_key.txt"
+  api_key_env: "OPENAI_API_KEY"
+  model: "gpt-4o-mini"
+
+# -----------------
+# Defaults (UI / CLI)
+# AI thumbnail generator.
+# Paste your Hugging Face token in config/huggingface_api_key.txt, or set HF_TOKEN.
+# If the key/API fails, ClipForge falls back to the local thumbnail renderer.
+ai_thumbnail_generation:
+  enabled: true
+  hf_enabled: false
+  provider: "hf-inference"
+  model: "black-forest-labs/FLUX.1-schnell"
+  hf_api_key_file: "config/huggingface_api_key.txt"
+  hf_api_key_env: "HF_TOKEN"
+  use_openai_prompt: true
+  no_arrows_circles: true
+  variations: 3
+  width: 768
+  height: 1344
+  steps: 4
+  retries: 2
+
+# -----------------
+platform_default: "instagram"       # instagram | tiktok | youtube
+clip_mode_default: "simple_auto"    # semantic | manual | simple_auto
+
+# NOTE: code actually uses ffmpeg_quality_default (niche defined)
+output_quality_default: "balanced"  # legacy, info-only
+
+# -----------------
+# Aspect Ratio & Resize
+# -----------------
+aspect_ratio_default: "9:16"
+resize_mode: "crop"
+
+# -----------------
+# Semantic Highlights
+# -----------------
+semantic_languages: ["*"]
+# Urdu/Hindi clip selection normalization
+# Keeps original source timestamps, but enriches selection scoring with
+# source text + Roman text + English translated text.
+non_english_selection:
+  enabled: true
+fallback_clip_mode_for_non_english: "simple_auto"
+
+semantic_highlights:
+  enabled: true
+  model_name: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+  device: cpu
+  batch_size: 32
+  min_keyword_score: 3
+  min_window: 20
+  max_window: 60
+  max_candidates: 300
+  top_k: 6
+  lambda_diversity: 0.35
+  max_selected_similarity: 0.86
+  max_temporal_overlap: 0.55
+  min_final_score: 0.42
+  min_hook_score: 0.28
+  min_completeness_score: 0.34
+  min_retention_score: 0.28
+  min_takeaway_score: 0.25
+  debug: true
+  weights:
+    hook: 0.30
+    completeness: 0.20
+    emotion_energy: 0.15
+    keyword: 0.15
+    salience: 0.10
+    novelty: 0.05
+    retention: 0.05
+  cache_enabled: true
+  cache_namespace: semantic_v1
+
+# -----------------
+# Filters
+# -----------------
+filters_enabled: true
+filter_preset_default: "Natural Enhance (Recommended)"
+filter_strength: 1.0
+
+# -----------------
+# FFmpeg paths
+# -----------------
+ffmpeg_path: "C:/ffmpeg/bin/ffmpeg.exe"
+ffprobe_path: "C:/ffmpeg/bin/ffprobe.exe"
+
+# -----------------
+# FFmpeg Encode (CPU)
+# -----------------
+ffmpeg_quality_default: "balanced"
+ffmpeg_encode:
+  preset: "fast"
+  crf: 22
+  audio_bitrate: "160k"
+  audio_rate: "48000"
+  threads: 4
+  tune: null
+  profile: "high"
+  level: "4.1"
+
+# -----------------
+# Speed & Cleanup
+# -----------------
+enable_fast_seek: true
+temp_cleanup: true
+
+# -----------------
+# Local AI Feature Testing
+# -----------------
+# Plan gating is disabled locally so every feature can be tested.
+
+# âœ… Roman captions toggle jo cut_all use karega
+captions_roman_enabled: true
+
+ai_features:
+  enabled: true               # master AI toggle
+  meta_debug: true            # print meta AI logs
+  captions_debug: false       # (optional; agar future me captions debug chalao)
+
+  # Romanization toggles (info):
+  # captions: currently cut_all top-level `captions_roman_enabled` dekh raha
+  romanize_captions: true
+  openai_roman_captions:
+    enabled: true
+    api_key_env: "OPENAI_API_KEY"
+    api_key_file: "config/openai_api_key.txt"
+    model: "gpt-4o-mini"
+    timeout_sec: 25
+  # meta: cut_shorts me use hota hai jab meta_output_style="roman" ho
+  romanize_meta: true
+
+  # Meta AI enhancer
+  enhance_meta: true
+
+  # Local OpenAI direct
+  allow_local_openai_direct: true
+  openai_api_key_env: "OPENAI_API_KEY"
+  openai_api_key_file: "config/openai_api_key.txt"
+  openai_model_translate: "gpt-4o-mini"
+  openai_model_meta: "gpt-4o-mini"
+  openai_model_romanize: "gpt-4o-mini"
+
+# -----------------
+# Reframe
+# -----------------
+reframe:
+  enabled: true              # âœ… ALWAYS ON
+  kind: "talking_head"       # face-centering mode
+
+  # Detection frequency (kam number = zyada responsive)
+  detect_every_n_frames: 10   # har kuch frames baad face detect
+
+  # Smoothing & movement
+  smooth_alpha: 0.12         # 0.1â€“0.2: thora smooth, par zyada laggy nahi
+  max_pan_px_per_frame: 12   # har frame me max pan pixels (zyada = fast follow)
+
+  # Low light helper
+  enhance_low_light: true
+
+  # Face / body size thresholds
+  min_face: 50               # agar face bahut chhota ho to ignore
+  min_upperbody: 110
+
+  # Center locking
+  dead_zone_px: 12           # jitna chhota, utna center-pe-tight lock
+  lock_strength_x: 0.8       # 0â€“1, jitna zyada, utna strongly centre ki taraf kheenchta
+
+roman_dataset:
+  enabled: true
+  path: assets/roman/clipforge_roman_caption_correction_200k.jsonl
+
+
+
+
+
+
+
+
+
