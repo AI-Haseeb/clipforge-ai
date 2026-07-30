@@ -1,4 +1,4 @@
-const API_BASE = "http://127.0.0.1:8000";
+﻿const API_BASE = "http://127.0.0.1:8000";
 
 const STORAGE_KEYS = {
   lastJob: "clipforge_current_job_id",
@@ -128,6 +128,8 @@ const profileName = document.getElementById("profileName");
 const profileEmail = document.getElementById("profileEmail");
 const profilePlan = document.getElementById("profilePlan");
 const profileCredits = document.getElementById("profileCredits");
+const profileSummaryPlan = document.getElementById("profileSummaryPlan");
+const profileSummaryCredits = document.getElementById("profileSummaryCredits");
 const profileLogoutBtn = document.getElementById("profileLogoutBtn");
 const profileConnectBtn = document.getElementById("profileConnectBtn");
 function getAuthToken() {  // returns the current Auth Token value
@@ -172,14 +174,43 @@ function closeAuthModal() {  // closes the login/signup modal in the frontend
   document.body.classList.remove("modal-open");
   setAuthMessage("");
 }
+function setTextOrInputValue(element, value) {  // writes a value into either text nodes or form fields
+  if (!element) return;
+  if ("value" in element) element.value = value;
+  else element.textContent = value;
+}
 function fillProfile(user = getAuthUser()) {  // fills profile UI fields from the current auth user
   if (!user) return;
   const name = user.name || "ClipForge User";
-  if (profileInitial) profileInitial.textContent = name.trim().charAt(0).toUpperCase() || "C";
-  if (profileName) profileName.textContent = name;
+  const initial = name.trim().charAt(0).toUpperCase() || "C";
+  if (profileModal) {
+    profileModal.querySelectorAll(".profile-avatar").forEach((avatar) => {
+      avatar.textContent = initial;
+    });
+  } else if (profileInitial) {
+    profileInitial.textContent = initial;
+  }
+  setTextOrInputValue(profileName, name);
   if (profileEmail) profileEmail.textContent = user.email || "";
-  if (profilePlan) profilePlan.textContent = user.plan || "Free";
-  if (profileCredits) profileCredits.textContent = String(user.credits ?? 30);
+  const plan = user.plan || "Free";
+  const credits = String(user.credits ?? 30);
+  if (profilePlan) profilePlan.textContent = plan;
+  if (profileCredits) profileCredits.textContent = credits;
+  if (profileSummaryPlan) profileSummaryPlan.textContent = plan;
+  if (profileSummaryCredits) profileSummaryCredits.textContent = credits;
+}
+function setProfileSection(targetSelector = "#profile-info") {  // shows one profile section at a time so sidebar clicks do not push content out of view
+  if (!profileModal) return;
+  const target = profileModal.querySelector(targetSelector) || profileModal.querySelector("#profile-info");
+  const activeSelector = target ? `#${target.id}` : "#profile-info";
+  profileModal.querySelectorAll(".profile-side-nav a").forEach((item) => {
+    item.classList.toggle("active", item.getAttribute("href") === activeSelector);
+  });
+  profileModal.querySelectorAll(".profile-section-card[id]").forEach((section) => {
+    section.classList.toggle("active", section === target);
+  });
+  const scroller = profileModal.querySelector(".profile-main-panel");
+  if (scroller) scroller.scrollTop = 0;
 }
 function openProfileModal() {  // opens the local profile/account modal
   const user = getAuthUser();
@@ -190,6 +221,7 @@ function openProfileModal() {  // opens the local profile/account modal
   fillProfile(user);
   profileModal.classList.remove("hidden");
   document.body.classList.add("modal-open");
+  setProfileSection("#profile-info");
 }
 function closeProfileModal() {  // closes the local profile/account modal
   if (!profileModal) return;
@@ -260,6 +292,15 @@ document.querySelectorAll("[data-auth-close]").forEach((el) => {
 
 document.querySelectorAll("[data-profile-close]").forEach((el) => {
   el.addEventListener("click", closeProfileModal);
+});
+
+profileModal?.querySelector(".profile-side-nav")?.addEventListener("click", (event) => {  // switches profile sections from the sidebar without changing the page hash
+  const link = event.target.closest("a[href^='#profile-']");
+  if (!link) return;
+  event.preventDefault();
+  const targetSelector = link.getAttribute("href") || "#profile-info";
+  if (!profileModal.querySelector(targetSelector)) return;
+  setProfileSection(targetSelector);
 });
 
 profileLogoutBtn?.addEventListener("click", async () => {
@@ -2808,6 +2849,9 @@ function setupBenchmarkComparison() {
   switchMode("upload");
   restorePreviousJobOnLoad();
 });
+
+
+
 
 
 

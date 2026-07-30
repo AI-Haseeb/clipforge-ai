@@ -10,7 +10,7 @@
   <meta http-equiv="Expires" content="0" />
   <link rel="preload" href="./assets/hero-showcase.png" as="image" />
   <link rel="preload" href="./assets/logo.png" as="image" />
-  <link rel="stylesheet" href="style.css?v=20260724-auth-preview" />
+  <link rel="stylesheet" href="style.css?v=20260725-profile-center" />
 </head>
 
 <body data-theme="dark">
@@ -1283,39 +1283,194 @@
 
   <div id="profileModal" class="auth-modal hidden" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
     <div class="auth-backdrop" data-profile-close></div>
-    <section class="profile-card">
+    <section class="profile-card profile-management-modal">
       <button class="auth-close" type="button" aria-label="Close profile" data-profile-close>&times;</button>
-      <div class="profile-head">
-        <div id="profileInitial" class="profile-avatar">C</div>
-        <div>
-          <span class="section-kicker">Account</span>
-          <h2 id="profileTitle">Profile</h2>
-          <p id="profileEmail">Not signed in</p>
-        </div>
-      </div>
 
-      <div class="profile-panel">
-        <h3 id="profileName">ClipForge User</h3>
-        <div class="profile-row"><span>Plan</span><strong id="profilePlan">Free</strong></div>
-        <div class="profile-row"><span>Credits</span><strong id="profileCredits">30</strong></div>
-        <div class="profile-row"><span>Storage</span><strong>Local testing</strong></div>
-      </div>
+      <div class="profile-dashboard-shell">
+        <aside class="profile-side-nav" aria-label="Profile sections">
+          <div class="profile-brand-lockup">
+            <span id="profileInitial" class="profile-avatar">C</span>
+            <div>
+              <strong>ClipForge AI</strong>
+              <span>Creator Account</span>
+            </div>
+          </div>
+          <nav>
+            <a href="#profile-info" class="active">Personal Information</a>
+            <a href="#profile-security">Security</a>
+            <a href="#profile-preferences">Preferences</a>
+            <a href="#profile-notifications">Notifications</a>
+            <a href="#profile-usage">Usage</a>
+            <a href="#profile-storage">Storage</a>
+            <a href="#profile-subscription">Subscription</a>
+            <a href="#profile-billing">Billing</a>
+            <a href="#profile-connected">Connected Accounts</a>
+            <a href="#profile-api">API Keys</a>
+            <a href="#profile-privacy">Privacy</a>
+            <a href="#profile-danger">Danger Zone</a>
+          </nav>
+        </aside>
 
-      <div class="profile-panel">
-        <h3>Social connections</h3>
-        <p>Google, Apple, and Facebook can be connected after OAuth keys are configured on hosting.</p>
-        <button id="profileConnectBtn" type="button" class="profile-secondary">Connect accounts</button>
-      </div>
+        <main class="profile-main-panel">
+          <header class="profile-main-head">
+            <div class="profile-title-block">
+              <span class="profile-chip">Account</span>
+              <h2 id="profileTitle">Profile Center</h2>
+              <p id="profileEmail">Not signed in</p>
+            </div>
+            <div class="profile-head-actions">
+              <span class="profile-status-pill">Verified</span>
+              <span class="profile-status-pill muted">Member Since 2026</span>
+              <button type="button" class="profile-secondary">Edit Profile</button>
+            </div>
+          </header>
 
-      <div class="profile-actions">
-        <a href="#pricing" class="profile-upgrade" data-profile-close>Upgrade Plan</a>
-        <button id="profileLogoutBtn" type="button">Sign Out</button>
+          <section id="profile-info" class="profile-section-card active">
+            <div class="profile-section-heading">
+              <h3>Personal Information</h3>
+              <span>Editable local creator profile</span>
+            </div>
+            <div class="profile-editor-grid">
+              <div class="profile-picture-editor">
+                <span class="profile-avatar profile-photo-initial">C</span>
+                <div>
+                  <strong>Profile photo</strong>
+                  <p>Upload and remove actions are prepared for production storage.</p>
+                  <div class="profile-inline-actions">
+                    <button type="button" class="profile-secondary">Upload</button>
+                    <button type="button" class="profile-secondary">Remove</button>
+                  </div>
+                </div>
+              </div>
+              <label>Full Name<input id="profileName" type="text" value="ClipForge User" /></label>
+              <label>Username<input type="text" value="clipforge_creator" /></label>
+              <label>Email<input type="email" value="haseeb29581@gmail.com" /></label>
+              <label>Phone<input type="tel" placeholder="Add phone" /></label>
+              <label>Country<input type="text" value="Pakistan" /></label>
+              <label>Timezone<input type="text" value="Asia/Karachi" /></label>
+              <label>Language<select><option>English</option><option>Roman Urdu</option><option>Roman Hindi</option></select></label>
+              <label>Company<input type="text" value="ClipForge AI" /></label>
+              <label>Website<input type="url" placeholder="https://" /></label>
+              <label class="profile-wide-field">Bio<textarea rows="3" placeholder="Short creator bio"></textarea></label>
+            </div>
+            <div class="profile-form-actions"><button type="button">Save Changes</button><button type="button" class="profile-secondary">Cancel</button></div>
+          </section>
+
+          <section id="profile-security" class="profile-section-card">
+            <div class="profile-section-heading"><h3>Security</h3><span>Email login for local testing</span></div>
+            <div class="profile-editor-grid">
+              <label>Current Password<input type="password" placeholder="Current password" /></label>
+              <label>New Password<input type="password" placeholder="Minimum 8 characters" /></label>
+              <label>Confirm Password<input type="password" placeholder="Repeat new password" /></label>
+              <div class="profile-strength"><span style="width: 62%"></span></div>
+            </div>
+            <div class="profile-feature-list compact"><span>Active session: this browser</span><span>2FA - Coming Soon</span><span>Logout everywhere - Coming Soon</span></div>
+          </section>
+
+          <section id="profile-preferences" class="profile-section-card">
+            <div class="profile-section-heading"><h3>Preferences</h3><span>Creator workflow defaults</span></div>
+            <div class="profile-editor-grid">
+              <label>Theme<select><option>Dark premium</option><option>Light</option></select></label>
+              <label>Language<select><option>English</option><option>Roman Urdu</option></select></label>
+              <label>Caption Language<select><option>Auto EN/Roman</option><option>English</option><option>Roman Urdu/Hindi</option></select></label>
+              <label>Aspect Ratio<select><option>9:16 Shorts</option><option>1:1 Square</option><option>16:9 Landscape</option></select></label>
+              <label>Export Quality<select><option>Balanced</option><option>Fast</option><option>High quality</option></select></label>
+              <label>Thumbnail Style<select><option>High CTR</option><option>Clean</option><option>Cinematic</option></select></label>
+              <label>Metadata Style<select><option>Auto by transcript</option><option>Educational</option><option>Funny</option><option>Emotional</option></select></label>
+            </div>
+          </section>
+
+          <section id="profile-notifications" class="profile-section-card">
+            <div class="profile-section-heading"><h3>Notifications</h3><span>Local UI settings</span></div>
+            <div class="profile-toggle-list">
+              <label><input type="checkbox" checked /> Email updates</label>
+              <label><input type="checkbox" checked /> Processing complete</label>
+              <label><input type="checkbox" checked /> Failed jobs</label>
+              <label><input type="checkbox" /> Marketing</label>
+              <label><input type="checkbox" /> Weekly report</label>
+              <label><input type="checkbox" checked /> Security alerts</label>
+            </div>
+          </section>
+
+          <section id="profile-usage" class="profile-section-card">
+            <div class="profile-section-heading"><h3>Usage Analytics</h3><span>Local MVP summary</span></div>
+            <div class="profile-stat-grid">
+              <div><strong id="profileCredits">30</strong><span>Credits</span></div>
+              <div><strong>0</strong><span>Projects this month</span></div>
+              <div><strong>0</strong><span>Scheduled posts</span></div>
+            </div>
+            <div class="profile-chart-card"><span style="width: 28%"></span><span style="width: 46%"></span><span style="width: 62%"></span><span style="width: 38%"></span></div>
+          </section>
+
+          <section id="profile-storage" class="profile-section-card">
+            <div class="profile-section-heading"><h3>Storage Usage</h3><span>Generated jobs stay on this computer</span></div>
+            <div class="profile-storage-bar"><span style="width: 36%"></span></div>
+            <div class="profile-feature-list compact"><span>Original videos</span><span>Generated shorts</span><span>Thumbnails</span><span>Metadata</span><span>ZIP files</span></div>
+          </section>
+
+          <section id="profile-subscription" class="profile-section-card">
+            <div class="profile-section-heading"><h3>Subscription</h3><span>Production billing coming later</span></div>
+            <div class="profile-billing-row"><span>Current plan</span><strong id="profilePlan">Free</strong></div>
+            <div class="profile-billing-row"><span>Credits</span><strong>30 included</strong></div>
+            <div class="profile-billing-row"><span>Renew date</span><strong>Coming with payments</strong></div>
+          </section>
+
+          <section id="profile-billing" class="profile-section-card">
+            <div class="profile-section-heading"><h3>Billing History</h3><span>No live payments yet</span></div>
+            <div class="profile-table">
+              <div><strong>Invoice</strong><strong>Status</strong><strong>Action</strong></div>
+              <div><span>Local testing</span><span>Not billed</span><button type="button" class="profile-secondary">PDF Soon</button></div>
+            </div>
+          </section>
+
+          <section id="profile-connected" class="profile-section-card">
+            <div class="profile-section-heading"><h3>Connected Accounts</h3><span>OAuth after hosting setup</span></div>
+            <div class="profile-feature-list compact"><span>Google</span><span>GitHub</span><span>Microsoft</span><span>Apple</span></div>
+            <button id="profileConnectBtn" type="button" class="profile-secondary">Connect Accounts</button>
+          </section>
+
+          <section id="profile-api" class="profile-section-card profile-two-col">
+            <div><h3>API Keys</h3><p>API access is planned for the production roadmap.</p></div>
+            <span class="profile-status-pill warning">Coming Soon</span>
+          </section>
+
+          <section id="profile-privacy" class="profile-section-card">
+            <div class="profile-section-heading"><h3>Privacy</h3><span>Local MVP controls</span></div>
+            <div class="profile-toggle-list"><label><input type="checkbox" checked /> Keep files local during MVP testing</label><label><input type="checkbox" /> Share anonymous usage analytics</label></div>
+          </section>
+
+          <section id="profile-danger" class="profile-section-card profile-danger-card">
+            <div><h3>Danger Zone</h3><p>Sign out clears the local browser session only. Project/video deletion needs confirmation in production.</p></div>
+            <div class="profile-inline-actions"><button type="button" class="profile-secondary">Delete Projects</button><button type="button" class="profile-secondary">Delete Videos</button><button id="profileLogoutBtn" type="button">Sign Out</button></div>
+          </section>
+        </main>
+
+        <aside class="profile-summary-panel">
+          <div class="profile-summary-card">
+            <span class="profile-chip">Summary</span>
+            <h3>Creator Workspace</h3>
+            <p>Manage account, credits, preferences, storage, connected accounts, and future billing from one place.</p>
+            <div class="profile-mini-list">
+              <span><strong>Plan</strong><b id="profileSummaryPlan">Free</b></span>
+              <span><strong>Credits</strong><b id="profileSummaryCredits">30</b></span>
+              <span><strong>Status</strong><b>Active</b></span>
+            </div>
+            <a href="#pricing" class="profile-upgrade" data-profile-close>Upgrade Plan</a>
+          </div>
+        </aside>
       </div>
     </section>
   </div>
-  <script src="./app.js?v=20260724-auth-preview" defer></script>
+  <script src="./app.js?v=20260725-profile-center" defer></script>
 </body>
 </html>
+
+
+
+
+
+
+
 
 
 

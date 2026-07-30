@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -7,13 +7,13 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <link rel="stylesheet" href="style.css?v=20260724-auth" />
+  <link rel="stylesheet" href="style.css?v=20260725-profile-management" />
 </head>
 <body data-theme="dark" class="profile-page-body">
   <div class="site-bg"></div>
 
   <main class="profile-page-shell">
-    <section class="profile-dashboard-card">
+    <section class="profile-dashboard-card profile-management-page">
       <header class="profile-page-nav" aria-label="Profile navigation">
         <a href="./index.html#product" class="profile-page-brand" aria-label="Back to ClipForge AI home">
           <img src="./assets/logo.png" alt="ClipForge AI Logo" />
@@ -24,149 +24,242 @@
           <a href="./index.html#pricing">Pricing</a>
           <a href="./index.html#results">Results</a>
         </div>
+        <a class="profile-primary-link" href="./index.html#creator">Back to Studio</a>
       </header>
 
-      <section class="profile-hero-grid">
-        <aside class="profile-identity-panel">
-          <div class="profile-avatar-large">HA</div>
-          <h1>Haseeb Ahmed</h1>
-          <p>AI Short-Form Creator and ClipForge AI Builder</p>
-          <div class="profile-rating-row" aria-label="Profile rating">
-            <strong>8.9</strong>
-            <span>?????</span>
+      <section class="profile-top-card" aria-labelledby="profile-title">
+        <div class="profile-photo-zone">
+          <div class="profile-photo" data-profile-avatar>HA</div>
+          <div class="profile-photo-actions">
+            <label class="profile-mini-button">
+              Upload Photo
+              <input type="file" id="profilePhotoInput" accept="image/*" hidden />
+            </label>
+            <button class="profile-mini-button ghost" id="removeProfilePhoto" type="button">Remove</button>
           </div>
-          <div class="profile-action-row">
-            <a href="mailto:haseeb29581@gmail.com">Contact</a>
-            <a href="https://github.com/AI-Haseeb/clipforge-ai" target="_blank" rel="noreferrer">GitHub</a>
+        </div>
+        <div class="profile-headline">
+          <span class="profile-chip">AI Creator</span>
+          <h1 id="profile-title" data-profile-name>Haseeb Ahmed</h1>
+          <p><span data-profile-username>@haseeb</span> | Founder / Developer | <span data-profile-email>haseeb29581@gmail.com</span></p>
+          <div class="profile-meta-pills" aria-label="Account summary">
+            <span>Plan: <strong>Free</strong></span>
+            <span>Member since: <strong>Jul 2026</strong></span>
+            <span>Country: <strong>Pakistan</strong></span>
+            <span>Timezone: <strong>Asia/Karachi</strong></span>
           </div>
-        </aside>
-
-        <section class="profile-main-panel">
-          <div class="profile-title-row">
-            <div>
-              <span class="profile-kicker">Product Profile</span>
-              <h2>Creator Studio Workspace</h2>
-              <p>Manage your ClipForge AI account, project workflow, content exports, and future creator tools from one clean profile page.</p>
-            </div>
-            <span class="profile-status-badge">Functional MVP</span>
+        </div>
+        <div class="profile-status-zone">
+          <button class="profile-gradient-button" type="button" data-scroll-target="#personal">Edit Profile</button>
+          <div class="profile-status-list">
+            <span>Last login: Today</span>
+            <span>Account status: Active</span>
+            <span class="verified">Verified account</span>
           </div>
-
-          <div class="profile-tabs" role="list" aria-label="Profile sections">
-            <span class="active">Overview</span>
-            <span>Projects</span>
-            <span>Exports</span>
-            <span>Settings</span>
-          </div>
-
-          <div class="profile-info-grid">
-            <article>
-              <span>Account</span>
-              <strong>Local Testing</strong>
-            </article>
-            <article>
-              <span>Plan</span>
-              <strong>Free / Creator Ready</strong>
-            </article>
-            <article>
-              <span>Credits</span>
-              <strong>Local MVP Credits</strong>
-            </article>
-            <article>
-              <span>Queue</span>
-              <strong>Redis + RQ Ready</strong>
-            </article>
-          </div>
-
-          <div class="profile-section-card">
-            <div class="profile-section-head">
-              <h3>Creator Workflow</h3>
-              <span>One Upload ? Complete Package</span>
-            </div>
-            <div class="profile-workflow-row">
-              <span>Upload</span>
-              <span>Transcribe</span>
-              <span>Detect</span>
-              <span>Render</span>
-              <span>Export</span>
-            </div>
-          </div>
-        </section>
+        </div>
       </section>
 
-      <section class="profile-content-grid">
-        <aside class="profile-side-column">
-          <div class="profile-mini-card">
-            <h3>Work</h3>
-            <p><strong>ClipForge AI</strong><span>AI Short-Form Content Creation Platform</span></p>
-            <p><strong>Stage</strong><span>Functional MVP with production queue architecture</span></p>
-          </div>
-
-          <div class="profile-mini-card">
-            <h3>Skills</h3>
-            <ul class="profile-skill-list">
-              <li>AI video workflow</li>
-              <li>FastAPI backend</li>
-              <li>FFmpeg processing</li>
-              <li>Frontend UI design</li>
-              <li>Caption and metadata systems</li>
-            </ul>
-          </div>
+      <div class="profile-workspace-grid">
+        <aside class="profile-settings-nav" aria-label="Profile settings navigation">
+          <a class="active" href="#personal">Personal Information</a>
+          <a href="#security">Security</a>
+          <a href="#preferences">Preferences</a>
+          <a href="#notifications">Notifications</a>
+          <a href="#usage">Usage</a>
+          <a href="#storage">Storage</a>
+          <a href="#subscription">Subscription</a>
+          <a href="#billing">Billing</a>
+          <a href="#connected">Connected Accounts</a>
+          <a href="#api">API Keys</a>
+          <a href="#privacy">Privacy</a>
+          <a href="#danger">Danger Zone</a>
         </aside>
 
-        <section class="profile-details-column">
-          <div class="profile-section-card">
-            <div class="profile-section-head">
-              <h3>Profile Details</h3>
-              <span>ClipForge account overview</span>
+        <section class="profile-settings-main" aria-label="Profile settings sections">
+          <section class="profile-settings-card" id="personal">
+            <div class="profile-section-title">
+              <div><span>Profile</span><h2>Personal Information</h2></div>
+              <p>Update your creator identity and public workspace details.</p>
             </div>
-            <div class="profile-detail-table">
-              <div><span>Email</span><strong>haseeb29581@gmail.com</strong></div>
-              <div><span>Project</span><strong>ClipForge AI</strong></div>
-              <div><span>Role</span><strong>Founder / Developer</strong></div>
-              <div><span>Focus</span><strong>AI Shorts, Captions, Thumbnails, Metadata</strong></div>
-            </div>
-          </div>
+            <form class="profile-form-grid" data-profile-form>
+              <label>First Name<input type="text" value="Haseeb" maxlength="40" required /></label>
+              <label>Last Name<input type="text" value="Ahmed" maxlength="40" required /></label>
+              <label>Username<input type="text" value="haseeb" maxlength="28" pattern="[a-zA-Z0-9_\-]+" required /></label>
+              <label>Email Address<input type="email" value="haseeb29581@gmail.com" required /></label>
+              <label>Phone Number<input type="tel" placeholder="+92 300 0000000" pattern="[+0-9\s\-]{7,20}" /></label>
+              <label>Country<input type="text" value="Pakistan" maxlength="40" /></label>
+              <label>Timezone<select><option>Asia/Karachi</option><option>UTC</option><option>Asia/Dubai</option><option>Europe/London</option></select></label>
+              <label>Preferred Language<select><option>English</option><option>Roman Urdu</option><option>Roman Hindi</option><option>Punjabi</option></select></label>
+              <label>Company<input type="text" value="ClipForge AI" maxlength="80" /></label>
+              <label>Website<input type="url" placeholder="https://example.com" /></label>
+              <label class="full">Bio<textarea maxlength="220">Building an AI short-form content creator studio for clipping, captions, thumbnails, metadata, music, and ZIP exports.</textarea></label>
+              <div class="profile-form-actions full">
+                <button class="profile-gradient-button" type="submit">Save Changes</button>
+                <button class="profile-secondary-button" type="reset">Cancel</button>
+              </div>
+            </form>
+          </section>
 
-          <div class="profile-card-grid">
-            <article class="profile-output-card">
-              <span>MP4</span>
-              <h3>Short Videos</h3>
-              <p>Generated vertical clips with captions and music.</p>
-            </article>
-            <article class="profile-output-card">
-              <span>PNG</span>
-              <h3>Thumbnails</h3>
-              <p>Three thumbnail variations per short with fallback rendering.</p>
-            </article>
-            <article class="profile-output-card">
-              <span>TXT</span>
-              <h3>Metadata</h3>
-              <p>Titles, hooks, descriptions, hashtags, and CTA.</p>
-            </article>
-            <article class="profile-output-card">
-              <span>ZIP</span>
-              <h3>Export Package</h3>
-              <p>Download-ready files grouped for creator review.</p>
-            </article>
-          </div>
+          <section class="profile-settings-card" id="security">
+            <div class="profile-section-title">
+              <div><span>Account</span><h2>Security</h2></div>
+              <p>Manage sign-in protection and active sessions.</p>
+            </div>
+            <form class="profile-form-grid" data-password-form>
+              <label>Current Password<input type="password" autocomplete="current-password" /></label>
+              <label>New Password<input type="password" id="newPassword" autocomplete="new-password" /></label>
+              <label>Confirm Password<input type="password" autocomplete="new-password" /></label>
+              <label class="profile-check-line"><input type="checkbox" id="showPasswordToggle" /> Show password</label>
+              <div class="profile-strength full"><span>Password strength</span><div><i id="passwordStrengthBar"></i></div></div>
+              <div class="profile-form-actions full"><button class="profile-gradient-button" type="submit">Update Password</button></div>
+            </form>
+            <div class="profile-inline-grid two">
+              <article><strong>Two Factor Authentication</strong><span class="profile-coming-badge">Coming Soon</span></article>
+              <article><strong>Active Session</strong><p>Chrome | Pakistan | 127.0.0.1 | Active now</p><button class="profile-secondary-button small" type="button">Logout From All Devices</button></article>
+            </div>
+          </section>
 
-          <div class="profile-section-card">
-            <div class="profile-section-head">
-              <h3>System Preferences</h3>
-              <span>What should live in this profile</span>
+          <section class="profile-settings-card" id="preferences">
+            <div class="profile-section-title">
+              <div><span>Studio</span><h2>Preferences</h2></div>
+              <p>Choose defaults used by Creator Studio workflows.</p>
             </div>
-            <div class="profile-preference-grid">
-              <span>Language: English + Roman Urdu/Hindi/Punjabi</span>
-              <span>Caption presets and smart editing styles</span>
-              <span>Music category defaults</span>
-              <span>Saved jobs and resume status</span>
-              <span>Output history and ZIP downloads</span>
-              <span>Future social publishing connections</span>
+            <form class="profile-form-grid compact" data-profile-form>
+              <label>Caption Language<select><option>Auto EN/Roman</option><option>English</option><option>Roman Urdu</option><option>Roman Hindi</option><option>Punjabi</option></select></label>
+              <label>Aspect Ratio<select><option>9:16</option><option>16:9</option><option>1:1</option></select></label>
+              <label>Export Resolution<select><option>1080p</option><option>720p</option><option>4K</option></select></label>
+              <label>Theme<select><option>Dark</option><option>Light</option><option>System</option></select></label>
+              <label>Thumbnail Style<select><option>Modern</option><option>Minimal</option><option>Bold</option></select></label>
+              <label>Metadata Style<select><option>Professional</option><option>Marketing</option><option>Educational</option><option>Funny</option><option>Emotional</option></select></label>
+              <div class="profile-form-actions full"><button class="profile-gradient-button" type="submit">Save Preferences</button></div>
+            </form>
+          </section>
+
+          <section class="profile-settings-card" id="notifications">
+            <div class="profile-section-title">
+              <div><span>Alerts</span><h2>Notifications</h2></div>
+              <p>Control the updates you receive from ClipForge AI.</p>
             </div>
-          </div>
+            <div class="profile-toggle-grid">
+              <label><span>Email Notifications</span><input type="checkbox" checked /></label>
+              <label><span>Processing Complete</span><input type="checkbox" checked /></label>
+              <label><span>Failed Jobs</span><input type="checkbox" checked /></label>
+              <label><span>Weekly Summary</span><input type="checkbox" /></label>
+              <label><span>Product Updates</span><input type="checkbox" checked /></label>
+              <label><span>Marketing Emails</span><input type="checkbox" /></label>
+              <label><span>Security Alerts</span><input type="checkbox" checked /></label>
+            </div>
+            <button class="profile-gradient-button section-action" type="button" data-save-action>Save Notifications</button>
+          </section>
+
+          <section class="profile-settings-card" id="usage">
+            <div class="profile-section-title">
+              <div><span>Analytics</span><h2>Usage Analytics</h2></div>
+              <p>Local testing numbers are shown until production analytics APIs are connected.</p>
+            </div>
+            <div class="profile-stat-grid">
+              <article><span>Projects</span><strong>12</strong></article><article><span>Videos</span><strong>38</strong></article><article><span>Hours Processed</span><strong>18.5</strong></article><article><span>AI Shorts</span><strong>146</strong></article><article><span>Metadata</span><strong>146</strong></article><article><span>Thumbnails</span><strong>438</strong></article><article><span>Credits Used</span><strong>210</strong></article><article><span>Credits Left</span><strong>30</strong></article>
+            </div>
+            <div class="profile-chart-card">
+              <div class="profile-chart-head"><span>Monthly Jobs Processed</span><strong>Success Rate 96%</strong></div>
+              <div class="profile-bars" aria-label="Monthly usage chart"><i style="height:34%"></i><i style="height:48%"></i><i style="height:42%"></i><i style="height:63%"></i><i style="height:58%"></i><i style="height:76%"></i><i style="height:88%"></i><i style="height:72%"></i></div>
+            </div>
+          </section>
+
+          <section class="profile-settings-card" id="storage">
+            <div class="profile-section-title"><div><span>Files</span><h2>Storage Usage</h2></div><p>Track generated assets, cached transcripts, and ZIP exports.</p></div>
+            <div class="profile-storage-card">
+              <div><strong>8.4 GB used</strong><span>21.6 GB remaining</span></div>
+              <div class="profile-progress"><i style="width:28%"></i></div>
+              <div class="profile-storage-breakdown"><span>Original Videos 4.2 GB</span><span>Generated Shorts 2.8 GB</span><span>Thumbnails 520 MB</span><span>Metadata 80 MB</span><span>ZIP Files 900 MB</span></div>
+            </div>
+            <div class="profile-form-actions"><button class="profile-secondary-button" type="button">Manage Storage</button><button class="profile-secondary-button" type="button">Delete Old Files</button><button class="profile-gradient-button" type="button">Upgrade Storage</button></div>
+          </section>
+
+          <section class="profile-settings-card" id="subscription">
+            <div class="profile-section-title"><div><span>Plan</span><h2>Subscription</h2></div><p>Your current creator plan and future billing controls.</p></div>
+            <div class="profile-plan-card">
+              <span class="profile-chip">Current Plan</span><h3>Free Creator Workspace</h3>
+              <p>Local MVP access for testing upload, clipping, captions, thumbnails, metadata, and ZIP exports.</p>
+              <div class="profile-meta-pills"><span>Credits: <strong>30</strong></span><span>Minutes: <strong>Testing</strong></span><span>Renewal: <strong>Not active</strong></span></div>
+              <div class="profile-form-actions"><button class="profile-gradient-button" type="button">Upgrade Plan</button><button class="profile-secondary-button" type="button">Compare Plans</button><button class="profile-secondary-button" type="button">Cancel Subscription</button></div>
+            </div>
+          </section>
+
+          <section class="profile-settings-card" id="billing">
+            <div class="profile-section-title"><div><span>Payments</span><h2>Billing History</h2></div><p>Example billing records for the future production account area.</p></div>
+            <div class="profile-table-tools"><input type="search" placeholder="Search invoices" /><span>Page 1 of 1</span></div>
+            <div class="profile-table-wrap"><table><thead><tr><th>Invoice</th><th>Date</th><th>Plan</th><th>Amount</th><th>Status</th><th>PDF</th></tr></thead><tbody><tr><td>INV-001</td><td>Jul 2026</td><td>Free</td><td>$0</td><td>Paid</td><td><button>Download</button></td></tr><tr><td>INV-002</td><td>Coming Soon</td><td>Creator</td><td>-</td><td>Draft</td><td><button disabled>Pending</button></td></tr></tbody></table></div>
+          </section>
+
+          <section class="profile-settings-card" id="connected">
+            <div class="profile-section-title"><div><span>OAuth</span><h2>Connected Accounts</h2></div><p>Social and provider connections are ready for production OAuth setup.</p></div>
+            <div class="profile-provider-grid"><article><strong>Google</strong><span>Future Ready</span><button>Connect</button></article><article><strong>GitHub</strong><span>Future Ready</span><button>Connect</button></article><article><strong>Microsoft</strong><span>Future Ready</span><button>Connect</button></article><article><strong>Apple</strong><span>Future Ready</span><button>Connect</button></article></div>
+          </section>
+
+          <section class="profile-settings-card" id="api">
+            <div class="profile-section-title"><div><span>Developer</span><h2>API Keys</h2></div><p>API access will be added after production auth, billing, and permissions.</p></div>
+            <div class="profile-empty-state"><span class="profile-coming-badge">Coming Soon</span><strong>Generate, copy, regenerate, and delete API keys from here later.</strong><button class="profile-secondary-button" type="button" disabled>Generate API Key</button></div>
+          </section>
+
+          <section class="profile-settings-card" id="privacy">
+            <div class="profile-section-title"><div><span>Control</span><h2>Privacy</h2></div><p>Choose what becomes visible when public profiles are enabled.</p></div>
+            <div class="profile-toggle-grid"><label><span>Public Profile</span><input type="checkbox" /></label><label><span>Private Projects</span><input type="checkbox" checked /></label><label><span>Search Visibility</span><input type="checkbox" /></label><label><span>Data Collection</span><input type="checkbox" checked /></label></div>
+            <div class="profile-form-actions"><button class="profile-secondary-button" type="button">Download My Data</button><button class="profile-secondary-button" type="button">Export Account</button></div>
+          </section>
+
+          <section class="profile-settings-card danger" id="danger">
+            <div class="profile-section-title"><div><span>Danger</span><h2>Danger Zone</h2></div><p>Destructive actions require confirmation before production enablement.</p></div>
+            <div class="profile-danger-grid"><button type="button">Delete All Projects</button><button type="button">Delete All Videos</button><button type="button">Delete Account</button></div>
+          </section>
         </section>
-      </section>
+
+        <aside class="profile-summary-panel" aria-label="Profile summary">
+          <div class="profile-photo small" data-profile-avatar-small>HA</div>
+          <h2 data-profile-name-small>Haseeb Ahmed</h2>
+          <p data-profile-email-small>haseeb29581@gmail.com</p>
+          <span class="profile-chip">Free Plan</span>
+          <div class="profile-summary-list"><div><span>Credits Remaining</span><strong>30</strong></div><div><span>Storage Used</span><strong>8.4 GB</strong></div><div><span>Projects</span><strong>12</strong></div><div><span>Videos</span><strong>38</strong></div><div><span>Shorts</span><strong>146</strong></div><div><span>Member Since</span><strong>Jul 2026</strong></div><div><span>Verified</span><strong>Yes</strong></div></div>
+          <button class="profile-gradient-button full-width" type="button">Upgrade Plan</button>
+        </aside>
+      </div>
     </section>
   </main>
+
+  <div class="profile-toast" id="profileToast" role="status" aria-live="polite">Changes saved locally for testing.</div>
+
+  <script>
+    (() => {
+      const savedTheme = localStorage.getItem("clipforge_theme");
+      if (savedTheme === "light" || savedTheme === "dark") document.body.dataset.theme = savedTheme;
+      const storedUser = (() => { try { return JSON.parse(localStorage.getItem("clipforge_auth_user") || "null"); } catch { return null; } })();
+      const name = storedUser?.name || "Haseeb Ahmed";
+      const email = storedUser?.email || "haseeb29581@gmail.com";
+      const username = storedUser?.username || email.split("@")[0] || "haseeb";
+      const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "CF";
+      document.querySelectorAll("[data-profile-name], [data-profile-name-small]").forEach((el) => { el.textContent = name; });
+      document.querySelectorAll("[data-profile-email], [data-profile-email-small]").forEach((el) => { el.textContent = email; });
+      document.querySelector("[data-profile-username]").textContent = `@${username}`;
+      document.querySelectorAll("[data-profile-avatar], [data-profile-avatar-small]").forEach((el) => { el.textContent = initials; });
+      const toast = document.getElementById("profileToast");
+      const showToast = (message) => { toast.textContent = message; toast.classList.add("show"); window.clearTimeout(showToast.timer); showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2200); };
+      document.querySelectorAll("[data-profile-form]").forEach((form) => { form.addEventListener("submit", (event) => { event.preventDefault(); if (!form.checkValidity()) { form.reportValidity(); return; } showToast("Changes saved locally for testing."); }); });
+      document.querySelectorAll("[data-save-action]").forEach((button) => { button.addEventListener("click", () => showToast("Notification settings saved locally.")); });
+      document.querySelectorAll("[data-scroll-target]").forEach((button) => { button.addEventListener("click", () => document.querySelector(button.dataset.scrollTarget)?.scrollIntoView({ behavior: "smooth", block: "start" })); });
+      const navLinks = [...document.querySelectorAll(".profile-settings-nav a")];
+      const sections = navLinks.map((link) => document.querySelector(link.getAttribute("href"))).filter(Boolean);
+      const observer = new IntersectionObserver((entries) => { entries.forEach((entry) => { if (!entry.isIntersecting) return; navLinks.forEach((link) => link.classList.toggle("active", link.getAttribute("href") === `#${entry.target.id}`)); }); }, { rootMargin: "-35% 0px -55% 0px", threshold: 0.01 });
+      sections.forEach((section) => observer.observe(section));
+      const newPassword = document.getElementById("newPassword");
+      const strengthBar = document.getElementById("passwordStrengthBar");
+      newPassword?.addEventListener("input", () => { const value = newPassword.value; const score = Math.min(100, (value.length * 10) + (/[A-Z]/.test(value) ? 15 : 0) + (/[0-9]/.test(value) ? 15 : 0) + (/[^a-zA-Z0-9]/.test(value) ? 20 : 0)); strengthBar.style.width = `${score}%`; });
+      document.getElementById("showPasswordToggle")?.addEventListener("change", (event) => { document.querySelectorAll("#security input[type='password'], #security input[type='text']").forEach((input) => { if (input.id === "showPasswordToggle") return; input.type = event.target.checked ? "text" : "password"; }); });
+      const photoInput = document.getElementById("profilePhotoInput");
+      photoInput?.addEventListener("change", () => { const file = photoInput.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { document.querySelectorAll("[data-profile-avatar], [data-profile-avatar-small]").forEach((el) => { el.textContent = ""; el.style.backgroundImage = `url('${reader.result}')`; }); showToast("Profile photo preview updated locally."); }; reader.readAsDataURL(file); });
+      document.getElementById("removeProfilePhoto")?.addEventListener("click", () => { document.querySelectorAll("[data-profile-avatar], [data-profile-avatar-small]").forEach((el) => { el.style.backgroundImage = ""; el.textContent = initials; }); showToast("Profile photo removed locally."); });
+    })();
+  </script>
 </body>
 </html>
+
+
