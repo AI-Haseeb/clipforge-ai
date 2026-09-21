@@ -1,13 +1,15 @@
-﻿from __future__ import annotations  # enables future Python language features
+from __future__ import annotations  # enables future Python language features
 from email import parser  # parses and formats email data
 from pathlib import Path  # provides object-oriented file paths
 import yaml  # reads and writes YAML config data
 import json  # handles JSON encode and decode
+import math  # provides finite-number validation for manual timestamps
 import subprocess  # runs external system commands
 import re  # matches and cleans text with regular expressions
 import argparse  # parses command-line arguments
 import hashlib  # creates cryptographic hashes
 import shutil  # copies, moves, and removes files/folders
+import os
 from typing import Tuple, List, Dict, Any, Optional  # adds type hint helpers
 from src.pipeline.filters import FILTER_PRESETS  # project filter presets
 from src.utils.paths import ensure_dirs, p  # project path helper
@@ -328,28 +330,28 @@ def ask_filter_preset(default_name: str) -> str:# asks the CLI user for the filt
 # ============================================================
 # Time parsing + ffprobe duration
 # ============================================================
-def _parse_time_to_seconds(s: str) -> float:  # turns raw text/API data into structured values
+def _parse_time_to_seconds(s: str) -> float:  # parses and validates a non-negative manual timestamp
     s = (s or "").strip().lower()
     if not s:
         raise ValueError("empty time")
 
     m = re.fullmatch(r"(?:(\d+(?:\.\d+)?)h)?(?:(\d+(?:\.\d+)?)m)?(?:(\d+(?:\.\d+)?)s)?", s)
     if m and (m.group(1) or m.group(2) or m.group(3)):
-        hh = float(m.group(1) or 0)
-        mm = float(m.group(2) or 0)
-        ss = float(m.group(3) or 0)
-        return hh * 3600 + mm * 60 + ss
-
-    if ":" in s:
+        value = float(m.group(1) or 0) * 3600 + float(m.group(2) or 0) * 60 + float(m.group(3) or 0)
+    elif ":" in s:
         parts = [p.strip() for p in s.split(":") if p.strip() != ""]
         if len(parts) == 2:
-            mm, ss = parts
-            return float(mm) * 60 + float(ss)
-        if len(parts) == 3:
-            hh, mm, ss = parts
-            return float(hh) * 3600 + float(mm) * 60 + float(ss)
+            value = float(parts[0]) * 60 + float(parts[1])
+        elif len(parts) == 3:
+            value = float(parts[0]) * 3600 + float(parts[1]) * 60 + float(parts[2])
+        else:
+            raise ValueError("unsupported time format")
+    else:
+        value = float(s)
 
-    return float(s)
+    if not math.isfinite(value) or value < 0:
+        raise ValueError("time must be a finite non-negative number")
+    return value
 def _ffprobe_duration_seconds(ffprobe_path: str, video: Path) -> float:# reads video metadata with FFprobe
     cmd = [
         ffprobe_path, "-v", "error",
@@ -380,26 +382,30 @@ def _segments_from_manual(# builds clip segment data for segments from manual
     if ranges_str:
         segs: list[dict] = []
         raw_ranges = [r.strip() for r in re.split(r"[;,]", ranges_str) if r.strip()]
+        if not raw_ranges:
+            raise ValueError("Manual mode requires at least one start-end range.")
         for rng in raw_ranges:
             if "-" not in rng:
-                continue
+                raise ValueError(f"Invalid manual range '{rng}': use start-end.")
             a, b = [x.strip() for x in rng.split("-", 1)]
             try:
                 start = _parse_time_to_seconds(a)
                 end = _parse_time_to_seconds(b)
                 if end <= start:
-                    continue
+                    raise ValueError("end time must be greater than start time")
 
                 start = max(0.0, min(start, video_duration))
                 end = max(0.0, min(end, video_duration))
                 if end <= start:
-                    continue
+                    raise ValueError("range is outside the source video duration")
 
                 segs.append({"start": start, "end": end, "text": ""})
                 if len(segs) >= max_shorts:
                     break
-            except Exception:
-                continue
+            except ValueError as exc:
+                raise ValueError(f"Invalid manual range '{rng}': {exc}") from exc
+        if not segs:
+            raise ValueError("No valid manual ranges were provided.")
         return segs
 
     # ---------- Original interactive mode ----------
@@ -1470,6 +1476,15 @@ def main():  # runs this module as its command-line entry point
                         interactive=False,
                     )
 
+        # Very short inputs can be smaller than the configured minimum clip length.
+        # Keep the job useful by rendering the complete source as one short instead
+        # of silently producing an empty output set.
+        if not segments and video_duration > 0:
+            fallback_end = min(float(video_duration), float(max_len))
+            if fallback_end > 0:
+                segments = [{"start": 0.0, "end": fallback_end, "text": "", "source": "short_input_fallback"}]
+                print(f"[Selection] No valid segment met the minimum duration; using full short input ({fallback_end:.2f}s).", flush=True)
+
         save_segments(segments, segments_json)
         print(f"[stage] Segments selected: {len(segments)} (mode={clip_mode})", flush=True)
 
@@ -1577,13 +1592,19 @@ def main():  # runs this module as its command-line entry point
             # yahan ab wahi style jo upar decide hua:
             "final_captions_style": final_captions_style,
             "final_meta_style": settings.get("meta_output_style", final_meta_style),
+            "music_substituted": bool(settings.get("music_substituted", False)),
+            "requested_music_track": str(settings.get("music_track", "") or ""),
+            "actual_music_track": str(settings.get("actual_music_track", "") or ""),
+            "actual_music_category": str(settings.get("actual_music_category", "") or ""),
+            "music_substitutions": list(settings.get("music_substitutions", []) or []),
         }
 
         report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-        set_progress(8, "Building ZIP Package")
         print("[stage] Report saved:", report_path, flush=True)
 
-    set_progress(8, "Building ZIP Package")
+    if os.getenv("CLIPFORGE_PROGRESS_FILE"):
+        marker = Path(os.environ["CLIPFORGE_PROGRESS_FILE"]).with_name("pipeline_complete.json")
+        marker.write_text(json.dumps({"completed": True}), encoding="utf-8")
     print("\n[stage] DONE", flush=True)
 
 

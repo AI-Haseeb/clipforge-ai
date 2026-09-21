@@ -37,6 +37,32 @@ PROCESSING_STAGES = [
 ]
 
 
+STAGE_PROGRESS = {
+    1: 0.0,
+    2: 10.0,
+    3: 25.0,
+    4: 40.0,
+    5: 55.0,
+    6: 70.0,
+    7: 80.0,
+    8: 90.0,
+    9: 95.0,
+    10: 100.0,
+}
+
+STAGE_MESSAGES = {
+    1: "Upload / link submitted.",
+    2: "Worker picked up job from queue...",
+    3: "Extracting audio and running Faster Whisper...",
+    4: "Selecting clips using semantic AI analysis...",
+    5: "Reframing and applying video filters...",
+    6: "Generating ASS subtitle tracks and burning captions...",
+    7: "Creating 3 thumbnail variations per short...",
+    8: "Generating titles, hooks, hashtags, and descriptions...",
+    9: "Compiling shorts, thumbnails, metadata, and ZIP archive...",
+    10: "Job finished successfully!",
+}
+
 def _now_iso() -> str:  # creates a clean timestamp for saved job state
     return datetime.now().isoformat(timespec="seconds")
 
@@ -122,7 +148,7 @@ def _append_job_event(job_id: str, line: str, stage: Optional[int] = None, perce
 
 def _parse_log_percent(clean_line: str, stage: Optional[int]) -> Optional[float]:  # finds a progress percentage from a log line
     text = clean_line.lower()
-    if stage == 2 and (text.startswith("transcribing:") or text.startswith("translating:")):
+    if stage == 3 and (text.startswith("transcribing:") or text.startswith("translating:")):
         match = re.search(r"(\d+(?:\.\d+)?)\s*/\s*100", clean_line)
         if match:
             raw = float(match.group(1))
@@ -148,35 +174,48 @@ def _detect_stage_from_log(line: str) -> Optional[int]:  # detects the progress 
     if any(token in text for token in ignored_summary_tokens):
         return None
 
-    if "audio extracting" in text or "audio: extracting" in text or "whisper transcribing" in text or "whisper: transcribing" in text or text.startswith("transcribing:") or text.startswith("translating:"):
-        return 2
-    if "language detected" in text or "meta: using source track" in text or "meta: urdu/hindi" in text:
-        return 2
-    if "highlights selecting segments" in text or "highlights: selecting segments" in text or "segments selected" in text or text.startswith("[semantic-ai]"):
+    if "extracting audio" in text or "audio extracting" in text or "audio: extracting" in text or "whisper transcribing" in text or "whisper: transcribing" in text or text.startswith("transcribing:") or text.startswith("translating:"):
         return 3
-    if "start short" in text or "reframe" in text or "direct crop" in text or "applying color filter" in text:
+    if "language detected" in text or "meta: using source track" in text or "meta: urdu/hindi" in text:
+        return 3
+    if "selecting clips" in text or "highlights selecting segments" in text or "highlights: selecting segments" in text or "segments selected" in text or text.startswith("[semantic-ai]"):
         return 4
-    if "building captions track" in text or "burning subtitles" in text or "captions enabled but no segments" in text:
+    if "start short" in text or "reframe" in text or "reframing" in text or "direct crop" in text or "applying color filter" in text:
         return 5
-    if "thumbnail created" in text or "thumbnail creation failed" in text:
+    if "generating ass subtitle" in text or "building captions track" in text or "burning captions" in text or "burning subtitles" in text or "captions enabled but no segments" in text or "no speech was detected" in text:
         return 6
-    if "romanizing meta" in text or "report saved" in text or text.startswith("[meta-"):
+    if "creating 3 thumbnail" in text or "generating thumbnails" in text or "thumbnail created" in text or "thumbnail creation failed" in text:
         return 7
+    if "generating titles" in text or "writing metadata" in text or "romanizing meta" in text or "report saved" in text or text.startswith("[meta-"):
+        return 8
+    if "building zip" in text or "zip package" in text or "zip archive" in text:
+        return 9
     if "completed short" in text:
-        return 6
+        return 7
     return None
 
 
 def _make_job_log_callback(job_id: str):  # creates a logger that sends pipeline updates into job progress
+    structured = False
     def on_log(line: str) -> None:  # handles one pipeline log message
+        nonlocal structured
         clean_line = line.strip()
+        if clean_line.startswith("[progress-json] "):
+            payload = json.loads(clean_line[len("[progress-json] "):])
+            structured = True
+            _update_job(job_id, payload)
+            return
+        if structured:
+            return
         if clean_line.lower().startswith("[progress-stage]"):
             parts = clean_line.split(" ", 2)
             if len(parts) >= 2:
                 try:
-                    stage = int(parts[1])
                     label = parts[2].strip() if len(parts) > 2 else None
-                    _set_job_stage(job_id, stage, label)
+                    stage = int(parts[1])
+                    percent = min(90, stage * 10)
+                    _set_job_stage(job_id, stage, label, percent)
+                    _append_job_event(job_id, label or STAGE_MESSAGES.get(stage, "Processing"), stage, percent)
                     return
                 except ValueError:
                     pass
@@ -184,8 +223,9 @@ def _make_job_log_callback(job_id: str):  # creates a logger that sends pipeline
         stage = _detect_stage_from_log(line)
         percent = _parse_log_percent(clean_line, stage)
         if stage is not None:
-            label = "Transcribing Audio" if percent is not None else None
-            _set_job_stage(job_id, stage, label=label, percent=percent)
+            if percent is None:
+                percent = STAGE_PROGRESS.get(stage)
+            _set_job_stage(job_id, stage, label=STAGE_MESSAGES.get(stage), percent=percent)
             _append_job_event(job_id, clean_line, stage=stage, percent=percent)
         elif clean_line:
             _append_job_event(job_id, clean_line)
@@ -216,7 +256,7 @@ def run_clipforge_job(job_id: str, request_payload: dict[str, Any]) -> dict[str,
         "progress_failed": False,
         "error": "",
     })
-    _set_job_stage(job_id, 2, "Processing started")
+    _set_job_stage(job_id, 2, STAGE_MESSAGES[2], percent=STAGE_PROGRESS[2])
 
     try:
         request = PipelineRequest(**request_payload)
@@ -235,7 +275,7 @@ def run_clipforge_job(job_id: str, request_payload: dict[str, Any]) -> dict[str,
             },
         }
         _update_job(job_id, payload)
-        _set_job_stage(job_id, 10, "Complete", percent=100)
+        _set_job_stage(job_id, 10, STAGE_MESSAGES[10], percent=STAGE_PROGRESS[10])
         return payload["result"]
     except Exception as exc:
         error_log = _write_error_log(job_id, traceback.format_exc())
@@ -271,7 +311,7 @@ def run_clipforge_batch_job(batch_id: str, base_request_payload: dict[str, Any],
         "progress_failed": False,
         "error": "",
     })
-    _set_job_stage(batch_id, 2, "Processing batch")
+    _set_job_stage(batch_id, 2, STAGE_MESSAGES[2], percent=STAGE_PROGRESS[2])
 
     output_base_dir = str(Path("data/batches") / batch_id / "jobs")
     base_request = PipelineRequest(**base_request_payload)
@@ -292,7 +332,7 @@ def run_clipforge_batch_job(batch_id: str, base_request_payload: dict[str, Any],
             "completed": completed,
             "failed": failed,
         })
-        _set_job_stage(batch_id, 2, f"Processing video {index} of {len(video_paths)}")
+        _set_job_stage(batch_id, 2, STAGE_MESSAGES[2], percent=STAGE_PROGRESS[2])
         request = _copy_request_for_video(base_request, str(video_path), output_base_dir)
 
         try:
@@ -332,7 +372,7 @@ def run_clipforge_batch_job(batch_id: str, base_request_payload: dict[str, Any],
             "error": "",
         })
         _update_job(batch_id, final_payload)
-        _set_job_stage(batch_id, 10, "Complete", percent=100)
+        _set_job_stage(batch_id, 10, STAGE_MESSAGES[10], percent=STAGE_PROGRESS[10])
     else:
         final_payload.update({
             "status": "failed",
@@ -347,7 +387,7 @@ def run_clipforge_batch_job(batch_id: str, base_request_payload: dict[str, Any],
 
 
 def run_clipforge_link_job(job_id: str, request_payload: dict[str, Any], video_url: str) -> dict[str, Any]:  # downloads a link and runs it as a queued job
-    from src.services.video_downloader import download_video_from_url  # downloads videos from supported URLs
+    from src.services.video_downloader import VideoDownloadError, download_video_from_url  # downloads videos from supported URLs
 
     _update_job(job_id, {
         "status": "processing",
@@ -356,7 +396,7 @@ def run_clipforge_link_job(job_id: str, request_payload: dict[str, Any], video_u
         "progress_failed": False,
         "error": "",
     })
-    _set_job_stage(job_id, 1, "Downloading video")
+    _set_job_stage(job_id, 2, STAGE_MESSAGES[2], STAGE_PROGRESS[2])
     try:
         downloaded_video = download_video_from_url(video_url)
         request_payload = dict(request_payload)
@@ -375,7 +415,7 @@ def run_clipforge_link_job(job_id: str, request_payload: dict[str, Any], video_u
             "finished_at": _now_iso(),
             "progress_failed": True,
             "progress_label": "Failed",
-            "error": "Link download or pipeline failed. Check backend worker logs for details.",
+            "error": str(exc) if isinstance(exc, VideoDownloadError) else "Link download or pipeline failed. Check backend worker logs for details.",
             "error_detail_log": error_log,
             "error_type": type(exc).__name__,
         })

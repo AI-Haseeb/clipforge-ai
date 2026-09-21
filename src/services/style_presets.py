@@ -91,16 +91,49 @@ STYLE_PRESETS = {
         "music_enabled": True,
     },
 }
-def apply_editing_style_defaults(req):  # applies the selected preset/style/value
-    style = (req.editing_style or "none").strip().lower()
+def _has_value(options, key):
+    if isinstance(options, dict):
+        return key in options
+    return key in getattr(options, "__dict__", {})
+
+
+def _get_value(options, key, default=None):
+    if isinstance(options, dict):
+        return options.get(key, default)
+    return getattr(options, key, default)
+
+
+def _set_value(options, key, value):
+    if isinstance(options, dict):
+        options[key] = value
+    else:
+        setattr(options, key, value)
+
+
+def _is_default_choice(value):
+    return value is None or str(value).strip().lower() in {"", "auto", "default", "none"}
+
+
+def apply_editing_style_defaults(options: dict) -> dict:  # fills only options that the user did not explicitly choose
+    style = str(_get_value(options, "editing_style", "none") or "none").strip().lower()
     preset = STYLE_PRESETS.get(style)
     if style == "none" or not preset:
-        return req
+        return options
 
-    req.filter_preset = preset["filter_preset"]
-    # User-selected caption controls must win over broad editing-style defaults.
-    # Editing style presets filter/music only; font preset, family, size, and position stay explicit.
-    req.music_enabled = preset.get("music_enabled", False)
-    req.music_category = preset.get("music_category", "none")
+    if not _has_value(options, "filter_preset") or _is_default_choice(_get_value(options, "filter_preset")):
+        _set_value(options, "filter_preset", preset["filter_preset"])
 
-    return req
+    if not isinstance(_get_value(options, "music_enabled"), bool):
+        _set_value(options, "music_enabled", preset.get("music_enabled", False))
+
+    music_track = str(_get_value(options, "music_track", "") or "").strip()
+    category = _get_value(options, "music_category")
+    category_missing_or_auto = not _has_value(options, "music_category") or category is None or str(category).strip().lower() in {"", "auto"}
+    if not music_track and category_missing_or_auto:
+        _set_value(options, "music_category", preset.get("music_category", "none"))
+
+    reframe_key = "auto_reframe" if "auto_reframe" in preset else "reframe"
+    if reframe_key in preset and not _has_value(options, reframe_key):
+        _set_value(options, reframe_key, preset[reframe_key])
+
+    return options

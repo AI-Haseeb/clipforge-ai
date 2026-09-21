@@ -184,9 +184,10 @@ def _build_thumbnail_brief_with_openai(base_prompt: str, title_text: str, transc
             print(f"   [thumbnail-ai] OpenAI thumbnail brief: {overlay}", flush=True)
         return brief
     except urllib.error.HTTPError as e:
-        if e.code in (401, 403):
+        if e.code in (401, 403, 429):
             _set_runtime_flag(settings, "_thumbnail_openai_unavailable")
-            print(f"   [thumbnail-ai] OpenAI thumbnail brief disabled for this job: HTTP {e.code}. Check OPENAI_API_KEY/config/openai_api_key.txt.", flush=True)
+            reason = "Rate limit/quota reached; using fallback." if e.code == 429 else "Check OPENAI_API_KEY/config/openai_api_key.txt."
+            print(f"   [thumbnail-ai] OpenAI thumbnail brief disabled for this job: HTTP {e.code}. {reason}", flush=True)
         else:
             print(f"   [thumbnail-ai] OpenAI thumbnail brief skipped: HTTP {e.code}", flush=True)
         return brief

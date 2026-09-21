@@ -1,0 +1,45 @@
+const { chromium } = require('C:/Users/salee/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const assert = require('node:assert/strict');
+(async () => {
+  const browser = await chromium.launch({ channel: 'msedge', headless: true });
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const now = new Date().toISOString();
+  const job = { status: 'processing', progress_schema: 2, progress_stage: 6, progress_percent: 65,
+    active_stages: [6], completed_stages: [0,1,2,3,4,5,7], progress_label: 'Generating thumbnails 1/1',
+    started_at: now, progress_events: [{ id: 1, message: 'Generating thumbnails 1/1', stage: 6, time: now }] };
+  await page.route('**/jobs/ui-test', route => route.fulfill({ json: job }));
+  await page.goto('http://localhost:5500');
+  await page.evaluate(() => { setCurrentJob('ui-test'); startPolling('ui-test'); });
+  await page.waitForFunction(() => document.querySelector('#progressEvents .event-message')?.textContent === 'Generating thumbnails 1/1');
+  assert.equal(await page.locator('#processingTimeline .active strong').innerText(), 'Generating Thumbnails');
+  assert.equal(await page.locator('#progressEvents .event-message').innerText(), 'Generating thumbnails 1/1');
+  assert.equal(await page.locator('#progressEvents .event-percent').count(), 0);
+  await page.locator('#processingTimeline').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(1200);
+  await page.locator('#processingTimeline').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'tmp/progress-desktop.png' });
+  await page.evaluate(job => { job.active_stages = [4,6]; setTimelineForStatus(job); }, job);
+  assert.equal(await page.locator('#processingTimeline .active').count(), 2);
+  job.status = 'failed'; job.error = 'Test pipeline failure';
+  await page.evaluate(() => startPolling('ui-test'));
+  await page.waitForFunction(() => pollingTimer === null);
+  assert.equal(await page.locator('#processingTimeline .failed').count(), 1);
+  assert.ok((await page.locator('body').innerText()).includes('Processing failed:'));
+  assert.ok(!(await page.locator('body').innerText()).includes('Status check failed, retrying'));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('#processingTimeline').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'tmp/progress-mobile.png' });
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+  const verified = require('../tmp/progress_verification.json');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.evaluate(id => { setCurrentJob(id); startPolling(id); }, verified.job_id);
+  await page.waitForFunction(() => document.querySelector('#shortsList video')?.readyState >= 1);
+  assert.equal(await page.locator('#shortsList video').count(), 1);
+  assert.equal(await page.locator('#thumbsList img').count(), 3);
+  assert.equal(await page.locator('#progressBar').innerText(), '100%');
+  await page.locator('#shortsList video').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(1000);
+  await page.screenshot({ path: 'tmp/progress-results.png' });
+  await browser.close();
+  console.log('PASS: stage alignment, parallel stages, unknown percent, terminal failure, mobile overflow, real completed results');
+})().catch(error => { console.error(error); process.exitCode = 1; });

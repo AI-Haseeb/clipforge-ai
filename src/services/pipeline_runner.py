@@ -6,6 +6,7 @@ import sys  # accesses Python runtime and CLI state
 import threading  # runs and coordinates threads
 import time  # measures time, delays, and elapsed seconds
 import uuid  # creates unique identifiers
+import zipfile
 from dataclasses import dataclass, asdict  # creates lightweight data classes
 from datetime import datetime  # works with dates and timestamps
 from pathlib import Path  # provides object-oriented file paths
@@ -142,6 +143,7 @@ def run_clipforge_pipeline(req: PipelineRequest, on_log: Optional[Callable[[str]
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "utf-8"
     env["PYTHONUTF8"] = "1"
+    env["PYTHONUNBUFFERED"] = "1"
     env.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
     progress_json = job_output_dir / "progress.json"
@@ -173,6 +175,8 @@ def run_clipforge_pipeline(req: PipelineRequest, on_log: Optional[Callable[[str]
     all_logs = []
     stop_progress_monitor = threading.Event()
     def emit_progress_line(payload: dict):# emits progress line to the caller/UI
+        if payload.get("progress_schema") == 2:
+            return
         stage = payload.get("stage")
         label = payload.get("label") or "Processing"
         try:
@@ -202,13 +206,20 @@ def run_clipforge_pipeline(req: PipelineRequest, on_log: Optional[Callable[[str]
     try:
         if process.stdout is not None:
             for line in process.stdout:
-                print(line, end="")
+                try:
+                    print(line, end="")
+                except UnicodeEncodeError:
+                    encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+                    print(line.encode(encoding, errors="backslashreplace").decode(encoding), end="")
                 all_logs.append(line)
                 if on_log:
                     on_log(line)
 
         process.wait()
     finally:
+        if process.poll() is None:
+            process.terminate()
+            process.wait()
         stop_progress_monitor.set()
         progress_thread.join(timeout=2)
 
@@ -219,20 +230,46 @@ def run_clipforge_pipeline(req: PipelineRequest, on_log: Optional[Callable[[str]
         "COMMAND:\n"
         + " ".join(command)
         + "\n\nOUTPUT:\n"
-        + stdout_text,
+        + stdout_text + f"\nEXIT CODE: {process.returncode}\n",
         encoding="utf-8",
     )
 
-    if process.returncode != 0:
-        raise RuntimeError(
-            f"Pipeline failed. Check log file: {log_path}\n\n{stdout_text}"
-        )
-
-    shorts_dir = job_output_dir / "shorts"
-    shorts = [str(p) for p in shorts_dir.rglob("*.mp4")] if shorts_dir.exists() else []
-
+    marker = job_output_dir / "pipeline_complete.json"
     reports_dir = job_output_dir / "reports"
     reports = list(reports_dir.rglob("*.json")) if reports_dir.exists() else []
+    shorts = []
+    for report in reports:
+        report_data = json.loads(report.read_text(encoding="utf-8"))
+        shorts.extend(report_data.get("shorts", []))
+    outputs_valid = bool(shorts) and all(Path(item).is_file() and Path(item).stat().st_size > 0 for item in shorts)
+    # Native libraries can fail during interpreter teardown, after all work was committed.
+    # Never recover an ordinary Python failure or an incomplete set of outputs.
+    native_exit = (int(process.returncode or 0) & 0xFFFFFFFF) >= 0x80000000
+    recovered = False
+    if process.returncode and native_exit and marker.exists() and outputs_valid:
+        recovered = all(_valid_video(Path(item)) for item in shorts)
+    if process.returncode != 0 and not recovered:
+        raise RuntimeError(
+            f"Pipeline failed (exit code {process.returncode}). Check log file: {log_path}"
+        )
+    if not outputs_valid:
+        raise RuntimeError(f"Pipeline produced no complete output set. Check log file: {log_path}")
+    if recovered:
+        with log_path.open("a", encoding="utf-8") as log:
+            log.write("Recovered validated outputs after a native interpreter shutdown failure.\n")
+
+    progress = json.loads(progress_json.read_text(encoding="utf-8")) if progress_json.exists() else {}
+    now = datetime.now().astimezone().isoformat()
+    events = progress.get("progress_events", [])
+    for event in events:
+        event.setdefault("ended_at", now)
+    events.append({"id": "zip", "message": "Building ZIP package", "stage": 8, "time": now})
+    progress.update(progress_schema=2, progress_stage=8, progress_label="Building ZIP package",
+                    active_stages=[8], completed_stages=list(range(8)), progress_percent=90,
+                    progress_events=events)
+    if on_log:
+        on_log("[progress-json] " + json.dumps(progress))
+    build_output_zip(job_output_dir)
     report_path = str(reports[0]) if reports else None
 
     return PipelineResult(
@@ -243,6 +280,31 @@ def run_clipforge_pipeline(req: PipelineRequest, on_log: Optional[Callable[[str]
         shorts=shorts,
         request=asdict(req),
     )
+
+
+def _valid_video(path: Path) -> bool:
+    try:
+        probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "stream=codec_type:format=duration",
+                                "-of", "json", str(path)], capture_output=True, text=True, timeout=30)
+        data = json.loads(probe.stdout)
+        return probe.returncode == 0 and float(data.get("format", {}).get("duration", 0)) > 0 and any(
+            stream.get("codec_type") == "video" for stream in data.get("streams", []))
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        return False
+
+
+def build_output_zip(output_dir: Path) -> Path:
+    zip_dir = output_dir / "zip"
+    zip_dir.mkdir(exist_ok=True)
+    target = zip_dir / "client_output.zip"
+    temporary = target.with_suffix(".tmp")
+    with zipfile.ZipFile(temporary, "w", zipfile.ZIP_DEFLATED) as archive:
+        for folder, name in (("shorts", "shorts"), ("meta", "metadata"), ("thumbnails", "thumbnails")):
+            for file in sorted((output_dir / folder).rglob("*")):
+                if file.is_file() and not file.name.startswith("_"):
+                    archive.write(file, Path(name) / file.relative_to(output_dir / folder))
+    temporary.replace(target)
+    return target
 
 
 if __name__ == "__main__":

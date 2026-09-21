@@ -262,7 +262,7 @@ ai_features:
     api_key_env: "OPENAI_API_KEY"
     api_key_file: "config/openai_api_key.txt"
     model: "gpt-4o-mini"
-    timeout_sec: 25
+    timeout_sec: 60
   # meta: cut_shorts me use hota hai jab meta_output_style="roman" ho
   romanize_meta: true
 

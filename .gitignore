@@ -62,3 +62,13 @@ Thumbs.db
 
 # Local duplicate/export folders
 _github_upload_clean/
+
+config/youtube_cookies.txt
+config/youtube_client_secret.json
+data/youtube_tokens/
+
+# Local scratch files and generated previews
+data/job_errors/
+tmp_docx_render/
+tmp_frontend_frames/
+tempCodeRunnerFile.python

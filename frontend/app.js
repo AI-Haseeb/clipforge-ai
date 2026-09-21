@@ -1,4 +1,4 @@
-﻿const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "http://127.0.0.1:8000";
 
 const STORAGE_KEYS = {
   lastJob: "clipforge_current_job_id",
@@ -39,6 +39,26 @@ const clearJobBtn = document.getElementById("clearJobBtn");
 
 const resultSection = document.getElementById("resultSection");
 const shortsList = document.getElementById("shortsList");
+const publishYoutubeBtn = document.getElementById("publishYoutubeBtn");
+const publishCenter = document.getElementById("publishCenter");
+const publishShortsList = document.getElementById("publishShortsList");
+const selectAllShorts = document.getElementById("selectAllShorts");
+const selectedShortsCount = document.getElementById("selectedShortsCount");
+const closePublishCenter = document.getElementById("closePublishCenter");
+const confirmYoutubePublish = document.getElementById("confirmYoutubePublish");
+const youtubeVisibility = document.getElementById("youtubeVisibility");
+const youtubePublishMode = document.getElementById("youtubePublishMode");
+const youtubeScheduleField = document.getElementById("youtubeScheduleField");
+const youtubeScheduleAt = document.getElementById("youtubeScheduleAt");
+const publishReview = document.getElementById("publishReview");
+let publishShorts = [];
+let publishThumbnails = [];
+let publishMetadata = [];
+let selectedPublishShorts = new Set();
+let publishThumbnailChoice = new Map();
+let youtubeAuthWindow = null;
+let youtubeStudioWindow = null;
+let youtubeConnected = false;
 const thumbsList = document.getElementById("thumbsList");
 const metaList = document.getElementById("metaList");
 const zipDownload = document.getElementById("zipDownload");
@@ -475,7 +495,7 @@ function setCreatorStep(step) {  // sets the Creator Step value in the UI/state
     button.classList.toggle("step-completed", stepNo < maxUnlockedCreatorStep);
     button.classList.toggle("locked", stepNo > maxUnlockedCreatorStep);
     const mark = button.querySelector(".step-mark");
-    if (mark) mark.textContent = stepNo < maxUnlockedCreatorStep ? "?" : String(stepNo);
+    if (mark) mark.textContent = stepNo < maxUnlockedCreatorStep ? "✓" : String(stepNo);
   });
 
   creatorStepPanels.forEach((panel) => {
@@ -837,20 +857,40 @@ function inputSummaryText() {  // builds the package summary text for selected u
   }
   return getValue("videoUrl").trim() || "No link pasted";
 }
+function inputMethodText() {  // identifies how the current source will enter the processing pipeline
+  if (mode === "link") return "Public Link";
+  if (selectedProjectInputPath) return "Project Video Library";
+  const count = document.getElementById("videoFile")?.files?.length || 0;
+  return count > 1 ? "Batch Upload" : "Single Video Upload";
+}
+function segmentSummaryText() {  // describes the selected clipping mode and its effective duration details
+  const segmentMode = getValue("segmentMode");
+  if (segmentMode === "fixed_duration") return `Fixed Duration - ${getValue("clipDuration") || "45"} seconds`;
+  if (segmentMode === "manual") {
+    const totalSeconds = manualRangesState.reduce((total, range) => total + Math.max(0, Number(range.end || 0) - Number(range.start || 0)), 0);
+    const durationText = totalSeconds > 0 ? ` - ${Math.round(totalSeconds)} seconds total` : "";
+    return `Manual Ranges - ${manualRangesState.length} clip${manualRangesState.length === 1 ? "" : "s"}${durationText}`;
+  }
+  if (segmentMode === "raw_footage") return "Raw Footage";
+  return "Semantic AI";
+}
 function getFlowSummaryHtml() {  // returns the current Flow Summary Html value
   const captionsOn = getValue("captions") !== "false";
   const musicOn = getValue("musicEnabled") === "true";
+  const selectedTrack = musicOn && selectedMusicCategory === getValue("musicCategory") ? selectedMusicTrack : "";
+  const musicVolume = Math.round(Math.max(0, Math.min(1, Number(getValue("musicVolume") || 0))) * 100);
   return `
-    <div class="summary-head"><strong>Package Summary</strong><span>${mode === "upload" ? "Upload" : "Link"}</span></div>
+    <div class="summary-head"><strong>Package Summary</strong><span>${escapeHtml(labelFromSelect("platform"))}</span></div>
     <div class="summary-grid">
-      <span>Input</span><strong>${escapeHtml(inputSummaryText())}</strong>
-      <span>Segment</span><strong>${escapeHtml(labelFromSelect("segmentMode"))}</strong>
-      <span>Aspect</span><strong>${escapeHtml(labelFromSelect("aspectRatio"))}</strong>
+      <span>Input Method</span><strong>${escapeHtml(inputMethodText())}</strong>
+      <span>Input Source</span><strong>${escapeHtml(inputSummaryText())}</strong>
+      <span>Platform & Aspect</span><strong>${escapeHtml(labelFromSelect("platform"))} - ${escapeHtml(labelFromSelect("aspectRatio"))}</strong>
+      <span>Segment Mode</span><strong>${escapeHtml(segmentSummaryText())}</strong>
       <span>Editing</span><strong>${escapeHtml(getEffectiveEditingStyle() === "none" ? "Custom Editing" : labelFromSelect("editingStyle"))}</strong>
       <span>Quality</span><strong>${escapeHtml(labelFromSelect("outputResolution"))}</strong>
-      <span>Captions</span><strong>${captionsOn ? "On" : "Off"}</strong>
-      <span>Music</span><strong>${musicOn ? labelFromSelect("musicCategory") : "Off"}</strong>
-      ${getValue("segmentMode") === "manual" ? `<span>Manual Clips</span><strong>${manualRangesState.length || "None"}</strong>` : ""}
+      <span>Filter & Reframe</span><strong>${escapeHtml(labelFromSelect("filterPreset"))} - Reframe ${getValue("reframe") === "on" ? "Enabled" : "Disabled"}</strong>
+      <span>Captions</span><strong>${captionsOn ? `${escapeHtml(labelFromSelect("fontPreset"))} - ${escapeHtml(labelFromSelect("fontFamily"))} - ${escapeHtml(labelFromSelect("captionSize"))} - ${escapeHtml(labelFromSelect("captionPosition"))} - ${escapeHtml(labelFromSelect("captionCase"))}` : "Off"}</strong>
+      <span>Music</span><strong>${musicOn ? `${escapeHtml(labelFromSelect("musicCategory"))}${selectedTrack ? ` - ${escapeHtml(selectedTrack)}` : ""} - ${musicVolume}%` : "Off"}</strong>
     </div>
     <p>Expected outputs: shorts, thumbnails, metadata, and ZIP package.</p>
   `;
@@ -872,6 +912,19 @@ function renderTimeline(activeIndex = -1, failed = false) {  // renders the rend
 function setTimelineForStatus(statusOrJob) {  // sets the Timeline For Status value in the UI/state
   const job = typeof statusOrJob === "object" && statusOrJob ? statusOrJob : null;
   const status = job ? job.status : statusOrJob;
+  if (job?.progress_schema === 2 && status !== "completed") {
+    const active = new Set(job.active_stages || []);
+    const completed = new Set(job.completed_stages || []);
+    const failed = status === "failed" || job.progress_failed;
+    currentTimelineStage = Number(job.progress_stage);
+    processingTimeline.innerHTML = TIMELINE_STAGES.map((label, index) => {
+      if (index === 4 && (job.progress_events || []).some(event => !event.ended_at && event.stage === 4 && event.message.startsWith("Adding music"))) label = "Rendering / Adding Music";
+      const state = active.has(index) ? (failed ? "failed" : "active") : completed.has(index) ? "done" : "pending";
+      const mark = state === "done" ? "&#10003;" : state === "failed" ? "!" : String(index + 1);
+      return `<li class="${state}"><span>${mark}</span><strong>${label}</strong></li>`;
+    }).join("");
+    return;
+  }
   const backendStage = job && Number.isFinite(Number(job.progress_stage))
     ? Number(job.progress_stage)
     : null;
@@ -1135,7 +1188,7 @@ loadProjectInputLibrary();
   });
   document.getElementById("videoUrl")?.addEventListener("input", updateInputUnlock);
 
-  ["segmentMode", "aspectRatio", "outputResolution", "editingWorkflow", "editingStyle", "captions", "captionSize", "captionPosition", "fontPreset", "fontFamily", "captionCase", "reframe", "filterPreset", "musicEnabled", "musicCategory", "musicVolume"].forEach((id) => {
+  ["segmentMode", "platform", "aspectRatio", "outputResolution", "editingWorkflow", "editingStyle", "captions", "captionSize", "captionPosition", "fontPreset", "fontFamily", "captionCase", "reframe", "filterPreset", "musicEnabled", "musicCategory", "musicVolume"].forEach((id) => {
     document.getElementById(id)?.addEventListener("change", () => {
       updateFlowConditionals();
       updateFlowSummary();
@@ -1250,6 +1303,9 @@ function normalizeProgressEvent(message, percent = null, stage = null) {  // con
   if (lower.includes("building captions track") || lower.includes("burning subtitles")) {
     return { key: "stage-captions", message: "Creating captions", stagePercent: null, live: true };
   }
+  if (lower.includes("no speech was detected") || lower.includes("no segments found")) {
+    return { key: "stage-captions-empty", message: "No speech in selected range; captions skipped", stagePercent: null, live: false };
+  }
   if (lower.includes("thumbnail created")) {
     return { key: "stage-thumbnail", message: "Generated thumbnails", stagePercent: null, live: false };
   }
@@ -1295,7 +1351,7 @@ function freezeLiveProgressRows(exceptKey = null, endedAtMs = null) {  // freeze
 }
 function renderProgressEventRow(info, eventTime = null, row = null) {  // builds the event row HTML with local percent and stopwatch time
   const done = row?.dataset?.done === "true" || info.complete;
-  const hasPercent = !done && Number.isFinite(Number(info.stagePercent));
+  const hasPercent = !done && info.stagePercent != null && Number.isFinite(Number(info.stagePercent));
   const markerHtml = info.started ? "" : done ? "&#10003;" : hasPercent ? `${Number(info.stagePercent).toFixed(0)}%` : `<span class="event-dot" aria-hidden="true"></span>`;
   const markerClass = hasPercent ? "event-percent" : "event-marker";
   const startMs = Number(row?.dataset?.startedAt) || Number(eventTime) || Date.parse(eventTime || "") || Date.now();
@@ -1360,6 +1416,24 @@ function addProgressEvent(message, percent = null, eventTime = null, stage = nul
   if (progressEventsCount) progressEventsCount.textContent = jobStartTimestamp ? `Running ${formatLiveEventDuration(jobStartTimestamp)}` : `${progressEventCounter} updates`;
 }
 function syncProgressEvents(job) {  // renders progress events received from backend job state
+  if (job?.progress_schema === 2) {
+    const terminal = ["completed", "failed"].includes(job.status);
+    const end = job.finished_at ? Date.parse(job.finished_at) : Date.now();
+    if (job.started_at) jobStartTimestamp = Date.parse(job.started_at);
+    const events = job.progress_events || [];
+    const visible = [...events.filter(event => !event.ended_at).reverse(), ...events.filter(event => event.ended_at).slice(-8).reverse()];
+    progressEvents.innerHTML = visible.map(event => {
+      const done = Boolean(event.ended_at) || job.status === "completed";
+      const failed = !done && terminal;
+      const startMs = Date.parse(event.time);
+      const endMs = event.ended_at ? Date.parse(event.ended_at) : end;
+      const live = !done && !terminal;
+      const marker = done ? "&#10003;" : failed ? "!" : '<span class="event-dot" aria-hidden="true"></span>';
+      return `<li class="${live ? "is-live" : done ? "is-done" : "is-failed"}" data-live="${live}" data-started-at="${startMs}"><span class="event-marker">${marker}</span><span class="event-message">${escapeHtml(event.message)}</span><time>${live ? "+" : ""}${formatLiveEventDuration(startMs, endMs)}</time></li>`;
+    }).join("");
+    if (progressEventsCount) progressEventsCount.textContent = `${terminal ? (job.status === "failed" ? "Failed" : "Completed") : "Running"} ${formatLiveEventDuration(jobStartTimestamp, end)}`;
+    return;
+  }
   const events = Array.isArray(job?.progress_events) ? job.progress_events : [];
   if (events.length && !renderedProgressEvents.has("job-started")) {
     const firstTime = events[0]?.time || null;
@@ -1420,8 +1494,30 @@ function setProgress(percent, label) {  // sets the Progress value in the UI/sta
 
   updateProgressTiming(cleanPercent);
 }
+function isValidJobId(jobId) {  // rejects empty values and browser-autofilled email addresses
+  if (!jobId || typeof jobId !== "string") return false;
+  const clean = jobId.trim();
+  if (!clean || clean.includes("@")) return false;
+  return true;
+}
 function setCurrentJob(jobId) {  // sets the Current Job value in the UI/state
-  currentJobId = jobId || null;
+  if (!isValidJobId(jobId)) {
+    currentJobId = null;
+    localStorage.removeItem(STORAGE_KEYS.pendingJob);
+    localStorage.removeItem(STORAGE_KEYS.lastJob);
+
+    if (currentJobLabel) {
+      currentJobLabel.textContent = "No active job";
+    }
+
+    if (resumeJobId) {
+      resumeJobId.value = "";
+    }
+
+    return;
+  }
+
+  currentJobId = jobId.trim();
 
   if (currentJobId) {
     localStorage.setItem(STORAGE_KEYS.lastJob, currentJobId);
@@ -1441,18 +1537,34 @@ function setCurrentJob(jobId) {  // sets the Current Job value in the UI/state
   }
 }
 function setPendingJob(jobId) {  // sets the Pending Job value in the UI/state
-  if (!jobId) return;
+  if (!isValidJobId(jobId)) {
+    currentJobId = null;
+    localStorage.removeItem(STORAGE_KEYS.pendingJob);
+    localStorage.removeItem(STORAGE_KEYS.lastJob);
 
-  localStorage.setItem(STORAGE_KEYS.pendingJob, jobId);
-  localStorage.setItem(STORAGE_KEYS.lastJob, jobId);
-  currentJobId = jobId;
+    if (currentJobLabel) {
+      currentJobLabel.textContent = "No active job";
+    }
+
+    if (resumeJobId) {
+      resumeJobId.value = "";
+    }
+
+    return;
+  }
+
+  const cleanJobId = jobId.trim();
+
+  localStorage.setItem(STORAGE_KEYS.pendingJob, cleanJobId);
+  localStorage.setItem(STORAGE_KEYS.lastJob, cleanJobId);
+  currentJobId = cleanJobId;
 
   if (currentJobLabel) {
-    currentJobLabel.textContent = `Current Job: ${jobId}`;
+    currentJobLabel.textContent = `Current Job: ${cleanJobId}`;
   }
 
   if (resumeJobId) {
-    resumeJobId.value = jobId;
+    resumeJobId.value = cleanJobId;
   }
 }
 function clearStoredJob() {  // clears the Stored Job UI/state
@@ -1482,6 +1594,7 @@ function setButtonProcessing(active) {  // sets the Button Processing value in t
   generateBtn.textContent = active ? "Processing..." : "Generate Shorts";
 }
 function resetResults() {  // clears previous shorts/thumbnails/metadata before a new job
+  document.getElementById("musicFallbackNotice")?.remove();
   resultSection.classList.add("hidden");
   shortsList.innerHTML = "";
   thumbsList.innerHTML = "";
@@ -1571,6 +1684,33 @@ function updateResultSummary(shorts, thumbnails, metadata, downloadZip) {  // re
     </article>
   `;
 }
+function renderMusicFallbackNotice(resultData) {  // shows when a missing requested track was replaced during rendering
+  document.getElementById("musicFallbackNotice")?.remove();
+  const manifests = [resultData?.manifest, ...(Array.isArray(resultData?.manifests) ? resultData.manifests : [])].filter(Boolean);
+  const substitutions = manifests.flatMap((manifest) => {
+    if (Array.isArray(manifest.music_substitutions) && manifest.music_substitutions.length) return manifest.music_substitutions;
+    if (!manifest.music_substituted) return [];
+    return [{
+      requested_track: manifest.requested_music_track || manifest.music_track || "Requested track",
+      actual_track: manifest.actual_music_track || "Fallback track",
+      actual_category: manifest.actual_music_category || "",
+    }];
+  });
+  if (!substitutions.length || !resultSummary) return;
+
+  const details = substitutions.map((item) => {
+    const requested = escapeHtml(item.requested_track || "Requested track");
+    const actual = escapeHtml(item.actual_track || "Fallback track");
+    const category = item.actual_category ? ` (${escapeHtml(item.actual_category)})` : "";
+    return `<span><strong>${requested}</strong> was unavailable; used <strong>${actual}</strong>${category}.</span>`;
+  }).join("");
+  resultSummary.insertAdjacentHTML("afterend", `
+    <aside id="musicFallbackNotice" class="music-fallback-notice" role="status" aria-live="polite">
+      <span class="music-fallback-badge">Music fallback</span>
+      <div>${details}</div>
+    </aside>
+  `);
+}
 function switchMode(nextMode) {  // switches input mode between upload, link, and local library selection
   mode = nextMode;
 
@@ -1601,7 +1741,7 @@ function getPredictedUploadJobId(file) {  // returns the current Predicted Uploa
 function buildFormData() {  // collects frontend controls into the FormData sent to FastAPI
   const formData = new FormData();
 
-  formData.append("platform", "youtube");
+  formData.append("platform", getValue("platform") || "youtube");
   formData.append("aspect_ratio", getValue("aspectRatio"));
   formData.append("output_resolution", getValue("outputResolution") || "1080p");
   formData.append("segment_mode", getValue("segmentMode"));
@@ -1715,7 +1855,7 @@ async function fetchJson(url, options = {}) {  // fetches JSON from the backend 
     data = { error: "Invalid JSON response from backend." };
   }
 
-  if (!response.ok || data.error) {
+  if (!response.ok || (data.error && data.status !== "failed")) {
     throw new Error(
       data.details || data.error || `Request failed with status ${response.status}`
     );
@@ -1926,8 +2066,8 @@ clearJobBtn.addEventListener("click", () => {
 resumeJobBtn.addEventListener("click", async () => {
   const jobId = resumeJobId.value.trim();
 
-  if (!jobId) {
-    setStatus("Please enter a Job ID to resume.");
+  if (!isValidJobId(jobId)) {
+    setStatus("Please enter a valid Job ID (email addresses are not valid Job IDs).");
     return;
   }
 
@@ -1976,8 +2116,18 @@ generateBtn.addEventListener("click", async (event) => {
   try {
     isSubmitting = true;
 
-    if (getValue("segmentMode") === "manual" && !manualRangesState.length) {
-      throw new Error("Manual Ranges mode needs at least one clip range. Add start and end time first.");
+    if (getValue("segmentMode") === "manual") {
+      if (!manualRangesState.length) {
+        throw new Error("Manual Ranges mode needs at least one clip range. Add start and end time first.");
+      }
+      const invalidRange = manualRangesState.find(({ start, end }) => {
+        const startTime = Number(start);
+        const endTime = Number(end);
+        return !Number.isFinite(startTime) || !Number.isFinite(endTime) || startTime < 0 || endTime < 0 || endTime <= startTime;
+      });
+      if (invalidRange) {
+        throw new Error("Every manual range needs valid non-negative times, and end time must be greater than start time.");
+      }
     }
 
     const formData = buildFormData();
@@ -1987,8 +2137,6 @@ generateBtn.addEventListener("click", async (event) => {
       const fileInput = document.getElementById("videoFile");
 
       if (selectedProjectInputPath) {
-        const predictedJobId = (selectedProjectInputName || selectedProjectInputPath).replace(/\.[^.]+$/, "").replaceAll(" ", "_");
-        setPendingJob(predictedJobId);
         formData.append("local_input_path", selectedProjectInputPath);
         endpoint = `${API_BASE}/process-local-input`;
         setStatus(`Using project input video:\n${selectedProjectInputPath}`);
@@ -2004,9 +2152,6 @@ generateBtn.addEventListener("click", async (event) => {
 
         if (selectedFiles.length === 1) {
           const selectedFile = selectedFiles[0];
-          const predictedJobId = getPredictedUploadJobId(selectedFile);
-
-          setPendingJob(predictedJobId);
           formData.append("video", selectedFile);
           endpoint = `${API_BASE}/process-upload`;
         } else {
@@ -2026,11 +2171,22 @@ generateBtn.addEventListener("click", async (event) => {
         return;
       }
 
-      formData.append("video_url", url);
+      let parsedUrl;
+      try {
+        parsedUrl = new URL(url);
+      } catch {
+        throw new Error("Please enter a valid public link starting with http:// or https://.");
+      }
+      if (!["http:", "https:"].includes(parsedUrl.protocol) || !parsedUrl.hostname) {
+        throw new Error("Please enter a valid public link starting with http:// or https://.");
+      }
+
+      formData.append("video_url", parsedUrl.toString());
       endpoint = `${API_BASE}/process-link`;
     }
     setButtonProcessing(true);
     setProgress(15, "Uploading / submitting");
+    localStorage.removeItem(STORAGE_KEYS.pendingJob);
 
     const data = await fetchJson(endpoint, {
       method: "POST",
@@ -2059,6 +2215,9 @@ generateBtn.addEventListener("click", async (event) => {
 });
 function startPolling(jobId) {  // starts repeated backend status checks during processing
   if (!jobId) return;
+  let activeJobId = jobId;
+  let checking = false;
+  let stopped = false;
   if (!jobStartTimestamp) jobStartTimestamp = Date.now();
 
   if (pollingTimer) {
@@ -2066,8 +2225,14 @@ function startPolling(jobId) {  // starts repeated backend status checks during 
     pollingTimer = null;
   }
   async function checkStatus() {  // checks one backend job status during polling
+    if (checking || stopped) return;
+    checking = true;
     try {
-      const data = await fetchJson(`${API_BASE}/jobs/${encodeURIComponent(jobId)}`);
+      const data = await fetchJson(`${API_BASE}/jobs/${encodeURIComponent(activeJobId)}`);
+      if (data.job_id && data.job_id !== activeJobId) {
+        activeJobId = data.job_id;
+        setCurrentJob(activeJobId);
+      }
       syncProgressEvents(data);
 
       if (data.status === "queued") {
@@ -2075,7 +2240,7 @@ function startPolling(jobId) {  // starts repeated backend status checks during 
         setTimelineForStatus(data);
         const batchLine = data.type === "batch" ? `\nBatch: ${data.completed || 0}/${data.total || 0} videos` : "";
         setStatus(
-          `Your ${data.type === "batch" ? "batch" : "video"} is queued.\nJob ID: ${jobId}${batchLine}\nWaiting to start processing...`
+          `Your ${data.type === "batch" ? "batch" : "video"} is queued.\nJob ID: ${activeJobId}${batchLine}\nWaiting to start processing...`
         );
         setButtonProcessing(true);
       } else if (data.status === "processing") {
@@ -2084,24 +2249,32 @@ function startPolling(jobId) {  // starts repeated backend status checks during 
         const batchLine = data.type === "batch" ? `\nBatch: ${data.completed || 0}/${data.total || 0} videos` : "";
         const stageLabel = getBackendStageLabel(data, "Processing");
         setStatus(
-          `Processing your ${data.type === "batch" ? "batch" : "video"}...\nJob ID: ${jobId}${batchLine}\nCurrent stage: ${stageLabel}\n\nDo not start another job until this finishes.`
+          `Processing your ${data.type === "batch" ? "batch" : "video"}...\nJob ID: ${activeJobId}${batchLine}\nCurrent stage: ${stageLabel}\n\nDo not start another job until this finishes.`
         );
         setButtonProcessing(true);
       } else if (data.status === "completed") {
+        stopped = true;
         clearInterval(pollingTimer);
         pollingTimer = null;
 
-        setCurrentJob(jobId);
-        setProgress(90, "Loading results");
+        setCurrentJob(activeJobId);
+        setProgress(100, "Loading results");
         setTimelineForStatus({ ...data, progress_stage: TIMELINE_STAGES.length });
         setStatus(data.type === "batch" ? `Batch completed: ${data.completed || data.total || 0}/${data.total || 0} videos. Loading your results...` : "Processing completed successfully. Loading your results...");
 
-        await loadResults(jobId);
+        try {
+          await loadResults(activeJobId);
+        } catch (error) {
+          setStatus(`Processing completed, but results could not be loaded.\nJob ID: ${activeJobId}\n${error.message}`);
+          setButtonProcessing(false);
+          return;
+        }
 
         setProgress(100, "Completed");
         addProgressEvent("Job Complete", 100);
         setButtonProcessing(false);
       } else if (data.status === "failed") {
+        stopped = true;
         clearInterval(pollingTimer);
         pollingTimer = null;
 
@@ -2116,21 +2289,22 @@ function startPolling(jobId) {  // starts repeated backend status checks during 
           return;
         }
 
-        setProgress(0, "Failed");
+        setProgressForJob(data);
         setTimelineForStatus(data);
         setStatus("Processing failed:\n" + failedReason);
         setButtonProcessing(false);
       } else {
         setProgress(45, "Checking");
-        setStatus(`Current status: ${data.status || "unknown"}\nJob ID: ${jobId}`);
+        setStatus(`Current status: ${data.status || "unknown"}\nJob ID: ${activeJobId}`);
         setButtonProcessing(true);
       }
     } catch (error) {
-      setProgress(20, "Retrying");
       setStatus(
-        `Status check failed, retrying...\nJob ID: ${jobId}\nReason: ${error.message}`
+        `Status check failed, retrying...\nJob ID: ${activeJobId}\nReason: ${error.message}`
       );
       setButtonProcessing(true);
+    } finally {
+      checking = false;
     }
   }
 
@@ -2151,10 +2325,18 @@ async function loadResults(jobId) {  // loads load Results data into the browser
     resultSection.classList.remove("hidden");
 
     updateResultSummary(shorts, thumbnails, metadata, downloadZip);
+    renderMusicFallbackNotice(data);
 
     renderShorts(shorts);
     renderThumbnails(thumbnails);
     await renderMetadata(metadata);
+    publishShorts = shorts;
+    publishThumbnails = thumbnails;
+    publishMetadata = metadata;
+    selectedPublishShorts = new Set();
+    publishThumbnailChoice = new Map();
+    renderPublishCenter();
+    refreshYoutubeConnectionState();
     if (downloadZip) {
       zipDownload.href = makeApiUrl(downloadZip);
       zipDownload.classList.remove("disabled-link");
@@ -2179,6 +2361,134 @@ async function loadResults(jobId) {  // loads load Results data into the browser
     setButtonProcessing(false);
   }
 }
+
+function thumbnailNumber(item) {
+  const match = String(item?.name || "").match(/thumbnail_(\d+)(?:_v(\d+))?/i);
+  return match ? { short: Number(match[1]), variation: Number(match[2] || 1) } : null;
+}
+
+function thumbnailsForShort(shortIndex) {
+  return publishThumbnails.filter((item) => {
+    const parsed = thumbnailNumber(item);
+    return parsed && parsed.short === shortIndex;
+  }).sort((a, b) => (thumbnailNumber(a)?.variation || 1) - (thumbnailNumber(b)?.variation || 1));
+}
+
+function renderPublishCenter() {
+  if (!publishShortsList) return;
+  selectedShortsCount.textContent = `${selectedPublishShorts.size} selected`;
+  selectAllShorts.checked = publishShorts.length > 0 && selectedPublishShorts.size === publishShorts.length;
+  confirmYoutubePublish.disabled = selectedPublishShorts.size === 0;
+  publishReview.textContent = selectedPublishShorts.size
+    ? `${selectedPublishShorts.size} short${selectedPublishShorts.size === 1 ? "" : "s"} ready. Thumbnail and generated metadata will be used.`
+    : "Select at least one short to continue.";
+  publishShortsList.innerHTML = publishShorts.map((item, index) => {
+    const shortNumber = index + 1;
+    const selected = selectedPublishShorts.has(index);
+    const thumbs = thumbnailsForShort(shortNumber);
+    const choice = publishThumbnailChoice.get(index) || 1;
+    const options = thumbs.length ? thumbs.map((thumb, thumbIndex) => {
+      const parsed = thumbnailNumber(thumb);
+      return `<label class="publish-thumb-option ${choice === (parsed?.variation || thumbIndex + 1) ? "selected" : ""}"><input type="radio" name="publish-thumb-${index}" data-publish-thumb="${index}" value="${parsed?.variation || thumbIndex + 1}" ${choice === (parsed?.variation || thumbIndex + 1) ? "checked" : ""}/><img src="${makeApiUrl(thumb.url)}" alt="Thumbnail ${parsed?.variation || thumbIndex + 1}"/><span>${parsed?.variation || thumbIndex + 1}</span></label>`;
+    }).join("") : `<span class="publish-no-thumb">No thumbnail found</span>`;
+    return `<article class="publish-short-row ${selected ? "selected" : ""}">
+      <label class="publish-short-select"><input type="checkbox" data-publish-short="${index}" ${selected ? "checked" : ""}/><strong>Short ${shortNumber}</strong><span>${escapeHtml(item.name || "Generated short")}</span></label>
+      <div class="publish-thumb-options">${options}</div>
+    </article>`;
+  }).join("");
+}
+
+async function refreshYoutubeConnectionState() {
+  if (!confirmYoutubePublish) return;
+  try {
+    const response = await fetch(makeApiUrl("/youtube/auth/status"));
+    const data = await response.json();
+    youtubeConnected = Boolean(data.connected);
+    confirmYoutubePublish.textContent = data.connected ? "Publish Selected Shorts" : "Connect YouTube & Continue";
+    if (publishReview && data.connected) publishReview.textContent = "YouTube connected. Review your choices, then publish selected shorts.";
+  } catch (_) {
+    confirmYoutubePublish.textContent = "Connect YouTube & Continue";
+  }
+}
+
+window.addEventListener("message", (event) => {
+  if (event.data?.type !== "clipforge-youtube-connected") return;
+  refreshYoutubeConnectionState();
+  if (publishReview) publishReview.textContent = "YouTube connected. Review your choices, then publish selected shorts.";
+});
+
+function openPublishCenter() {
+  publishCenter?.classList.remove("hidden");
+  publishCenter?.scrollIntoView({ behavior: "smooth", block: "start" });
+  renderPublishCenter();
+}
+
+publishYoutubeBtn?.addEventListener("click", openPublishCenter);
+document.querySelector('[data-result-tab="publishPanel"]')?.addEventListener("click", refreshYoutubeConnectionState);
+closePublishCenter?.addEventListener("click", () => publishCenter?.classList.add("hidden"));
+selectAllShorts?.addEventListener("change", () => {
+  selectedPublishShorts = selectAllShorts.checked ? new Set(publishShorts.map((_, index) => index)) : new Set();
+  renderPublishCenter();
+});
+publishShortsList?.addEventListener("change", (event) => {
+  const shortInput = event.target.closest("[data-publish-short]");
+  const thumbInput = event.target.closest("[data-publish-thumb]");
+  if (shortInput) {
+    const index = Number(shortInput.dataset.publishShort);
+    if (shortInput.checked) selectedPublishShorts.add(index); else selectedPublishShorts.delete(index);
+  }
+  if (thumbInput) publishThumbnailChoice.set(Number(thumbInput.dataset.publishThumb), Number(thumbInput.value));
+  renderPublishCenter();
+});
+youtubePublishMode?.addEventListener("change", () => youtubeScheduleField?.classList.toggle("hidden", youtubePublishMode.value !== "schedule"));
+confirmYoutubePublish?.addEventListener("click", async () => {
+  const selected = [...selectedPublishShorts].map((index) => ({
+    short: publishShorts[index]?.name,
+    thumbnail: publishThumbnailChoice.get(index) || 1,
+  }));
+  const schedule = youtubePublishMode.value === "schedule" ? youtubeScheduleAt.value : "now";
+  if (!selected.length) return;
+  confirmYoutubePublish.disabled = true;
+  confirmYoutubePublish.textContent = "Starting YouTube connection...";
+  if (youtubeConnected && (!youtubeStudioWindow || youtubeStudioWindow.closed)) {
+    youtubeStudioWindow = window.open("about:blank", "clipforge-youtube-studio");
+  }
+  // Reserve a browser tab during the click gesture so popup blockers do not
+  // prevent the OAuth or YouTube Studio tab after an async API request.
+  if (!youtubeConnected && (!youtubeAuthWindow || youtubeAuthWindow.closed)) youtubeAuthWindow = window.open("about:blank", "clipforge-youtube-auth");
+  try {
+    const statusResponse = await fetch(makeApiUrl("/youtube/auth/status"));
+    const statusData = await statusResponse.json();
+    if (!statusData.connected) {
+      const response = await fetch(makeApiUrl(`/youtube/auth/start?job_id=${encodeURIComponent(currentJobId)}`));
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || data.error || "YouTube connection could not start.");
+      if (!data.authorize_url) throw new Error("YouTube authorization URL was not returned by the backend.");
+      setStatus(`Opening Google authorization for ${selected.length} selected short${selected.length === 1 ? "" : "s"}...`);
+      if (!youtubeAuthWindow || youtubeAuthWindow.closed) youtubeAuthWindow = window.open("about:blank", "clipforge-youtube-auth");
+      if (youtubeAuthWindow) youtubeAuthWindow.location.href = data.authorize_url;
+      else window.location.assign(data.authorize_url);
+    } else {
+      if (youtubeAuthWindow && !youtubeAuthWindow.closed) youtubeAuthWindow.close();
+      youtubeAuthWindow = null;
+      const response = await fetch(makeApiUrl("/youtube/publish"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ job_id: currentJobId, items: selected, visibility: youtubeVisibility.value, publish_mode: youtubePublishMode.value, publish_at: youtubeScheduleAt.value }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || data.error || "YouTube upload failed.");
+      setStatus(`YouTube upload complete.\n${data.items.map((item) => `${item.short}: ${item.url}`).join("\n")}`);
+      const studioUrl = "https://studio.youtube.com/channel/UCG36z8LyMB5wLmS3hPQuwbg/videos/upload?filter=%5B%5D&sort=%7B%22columnType%22%3A%22date%22%2C%22sortOrder%22%3A%22DESCENDING%22%7D";
+      if (youtubeStudioWindow) youtubeStudioWindow.location.href = studioUrl;
+      else setStatus(`Upload complete. Browser blocked the new tab. Open YouTube Studio manually: ${studioUrl}`);
+    }
+  } catch (error) {
+    const message = `YouTube setup error: ${error.message}`;
+    if (publishReview) publishReview.textContent = message;
+    setStatus(message);
+  } finally {
+    confirmYoutubePublish.disabled = selectedPublishShorts.size === 0;
+    confirmYoutubePublish.textContent = youtubeConnected ? "Publish Selected Shorts" : "Connect YouTube & Continue";
+  }
+});
+
 function renderShorts(shorts) {  // renders the render Shorts section from current app state
   shortsList.innerHTML = `<div class="section-title"><h4>Generated Shorts</h4><span>${shorts.length}</span></div>`;
 
@@ -2390,9 +2700,11 @@ function restorePreviousJobOnLoad() {  // resumes only an active in-progress job
   resetProgressEvents();
   resetResults();
 
-  if (!pendingJob) {
+  if (!isValidJobId(pendingJob)) {
     currentJobId = null;
     jobStartTimestamp = 0;
+    localStorage.removeItem(STORAGE_KEYS.pendingJob);
+    localStorage.removeItem(STORAGE_KEYS.lastJob);
     localStorage.removeItem(STORAGE_KEYS.lastStatus);
     setProgress(0, "Idle");
     setStatus("Waiting for input...");

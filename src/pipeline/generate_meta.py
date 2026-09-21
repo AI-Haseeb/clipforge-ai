@@ -590,6 +590,8 @@ def _openai_chat_enhance_meta(  # uses OpenAI Chat Completions to improve metada
     hits: List[Tuple[str, float]],
     settings: Optional[dict],
 ) -> Dict[str, Any]:
+    if (settings or {}).get("_meta_openai_unavailable"):
+        return {"title": title, "hooks": hooks, "description": description}
     api_key = _openai_chat_api_key(settings)
     if not api_key:
         if _meta_debug(settings):
@@ -690,7 +692,9 @@ Return JSON exactly like this:
 
     except Exception as e:
         if _meta_debug(settings):
-            print(f"[meta-openai] FAIL: {e}")
+            print(f"[meta-openai] Using local fallback: {e}")
+        if settings is not None and getattr(e, "code", None) in (401, 403, 429):
+            settings["_meta_openai_unavailable"] = True
         return {"title": title, "hooks": hooks, "description": description}
 
 

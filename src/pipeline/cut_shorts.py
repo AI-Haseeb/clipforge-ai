@@ -1,4 +1,4 @@
-﻿from __future__ import annotations  # enables future Python language features
+from __future__ import annotations  # enables future Python language features
 import json  # handles JSON encode and decode
 import difflib  # compares text sequences and close matches
 from pathlib import Path  # provides object-oriented file paths
@@ -407,12 +407,11 @@ def _rule_based_clean_roman(text: str, settings: Dict[str, Any] | None = None) -
         "slow se flo": "slow se flow",
     }
 
-    lowered = text.lower()
+    normalized = text
     for bad, good in PHRASE_FIXES.items():
-        if bad in lowered:
-            lowered = lowered.replace(bad, good)
+        normalized = re.sub(re.escape(bad), good, normalized, flags=re.IGNORECASE)
 
-    tokens = lowered.split()
+    tokens = normalized.split()
     cleaned_tokens: List[str] = []
 
     noisy_keys = list(noisy_map.keys()) if noisy_map else []
@@ -430,7 +429,7 @@ def _rule_based_clean_roman(text: str, settings: Dict[str, Any] | None = None) -
         root = m.group(1)
         suffix = m.group(2) or ""
         base = root.lower()
-        fixed = base
+        fixed = root
 
         # 1) Hand-written rules first. These protect common Roman Urdu words
         # from noisy dataset mappings such as "mat" -> "maut".
@@ -457,9 +456,9 @@ def _rule_based_clean_roman(text: str, settings: Dict[str, Any] | None = None) -
                 elif base == "k":
                     fixed = "ke"
                 else:
-                    fixed = base
+                    fixed = root
             else:
-                fixed = base if base != "k" else "ke"
+                fixed = root if base != "k" else "ke"
 
         # preserve capitalization if pehla letter capital tha
         if root[0].isupper():
@@ -733,6 +732,78 @@ def _cleanup_one_line_ascii(text_value: str) -> str:  # removes noise and normal
     out = "".join(ch for ch in out if ord(ch) < 128)
     out = re.sub(r"\s+", " ", out).strip()
     return out
+
+
+def _contains_south_asian_script(value: str) -> bool:
+    return any("\u0600" <= char <= "\u06ff" or "\u0900" <= char <= "\u097f" for char in value)
+
+
+def openai_romanize_segments(segments: List[dict], settings: Dict[str, Any]) -> Optional[List[dict]]:
+    """Romanize a transcript in one contextual call while preserving segment timing."""
+    if isinstance(settings, dict) and settings.get("_openai_roman_disabled"):
+        return None
+    cfg = _openai_roman_cfg(settings)
+    api_key = _openai_roman_api_key(settings)
+    source = [str(segment.get("text") or "").strip() for segment in segments]
+    if not bool(cfg.get("enabled", True)) or not api_key or not any(source):
+        return None
+
+    prompt = """Romanize the following timed Urdu, Hindi, Punjabi, or mixed-language transcript.
+Return JSON only in this exact shape: {"segments":["line 1","line 2"]}.
+The output array must have exactly the same number and order of items as the input.
+Use natural Roman Urdu/Hindi/Punjabi written only with English ASCII letters.
+Preserve meaning, names, numbers, punctuation, and spoken English words. Do not translate the speech into English.
+Use context across adjacent lines to resolve ambiguous words, but never merge or split lines.
+Do not add explanations, markdown, hashtags, or emojis.
+
+INPUT:
+""" + json.dumps({"segments": source}, ensure_ascii=False)
+    payload = {
+        "model": str(cfg.get("model", "gpt-4o-mini") or "gpt-4o-mini"),
+        "messages": [
+            {"role": "system", "content": "You are an expert Urdu, Hindi, and Punjabi transliterator. Output valid JSON only."},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0,
+        "response_format": {"type": "json_object"},
+    }
+    req = urllib.request.Request(
+        "https://api.openai.com/v1/chat/completions",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=float(cfg.get("timeout_sec", 60) or 60)) as response:
+            body = json.loads(response.read().decode("utf-8"))
+        content = body.get("choices", [{}])[0].get("message", {}).get("content", "")
+        result = json.loads(content).get("segments", [])
+        if not isinstance(result, list) or len(result) != len(source):
+            raise ValueError("OpenAI returned a different Roman segment count")
+        cleaned = [_cleanup_one_line_ascii(item) for item in result]
+        if any(not item and source[index] for index, item in enumerate(cleaned)) or any(
+            _contains_south_asian_script(item) for item in cleaned
+        ):
+            raise ValueError("OpenAI returned invalid Roman text")
+        output = []
+        for segment, value in zip(segments, cleaned):
+            copy = dict(segment)
+            copy["text"] = _rule_based_clean_roman(value, settings)
+            output.append(copy)
+        print(f"[roman-openai] Romanized {len(output)} transcript segments with context.", flush=True)
+        return output
+    except urllib.error.HTTPError as exc:
+        if exc.code in (401, 403, 429) and isinstance(settings, dict):
+            settings["_openai_roman_disabled"] = True
+        reason = "rate limit/quota" if exc.code == 429 else "authentication" if exc.code in (401, 403) else "API error"
+        print(f"[roman-openai] Using local fallback: HTTP {exc.code} ({reason}).", flush=True)
+    except urllib.error.URLError as exc:
+        print(f"[roman-openai] Using local fallback: network unavailable ({exc.reason}).", flush=True)
+    except (ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
+        print(f"[roman-openai] Using local fallback: invalid response ({exc}).", flush=True)
+    return None
+
+
 def openai_cleanup_roman_captions(text: str, settings: Dict[str, Any]) -> str:  # uses OpenAI to polish one subtitle line into natural Roman Urdu/Hindi
     if isinstance(settings, dict) and settings.get("_openai_roman_disabled"):
         return ""
@@ -830,13 +901,9 @@ def ai_cleanup_roman_captions(text: str, settings: Dict[str, Any]) -> str:  # cl
         return text or ""
 
     line = text.strip()
-    ai_cfg = (settings or {}).get("ai_features", {}) or {}
-    ai_enabled = bool(ai_cfg.get("enabled", False))
-
-    if ai_enabled:
-        openai_out = openai_cleanup_roman_captions(line, settings)
-        if openai_out:
-            return openai_out
+    openai_out = openai_cleanup_roman_captions(line, settings)
+    if openai_out:
+        return openai_out
 
     rough = literal_romanize(line)
     rough = re.sub(r"\s+", " ", rough).strip()
@@ -1258,18 +1325,22 @@ def cut_all(  # renders all selected segments into final shorts with captions, t
     #   - Shorts ke captions isi clean roman file se slice honge
     roman_whisper = None
 
-    if romanize_captions and captions_src.get("segments"):
+    if captions_enabled and romanize_captions and captions_src.get("segments"):
+        set_progress(5, "Preparing Roman captions")
         print("[Roman Engine v2] Precomputing full-video Roman captions...")
 
-        roman_segments: List[dict] = []
-        for seg in captions_src.get("segments", []) or []:
+        source_segments = captions_src.get("segments", []) or []
+        roman_segments = openai_romanize_segments(source_segments, settings)
+        if roman_segments is None:
+            roman_segments = []
+        for seg in source_segments[len(roman_segments):]:
             raw_text = (seg.get("text") or "").strip()
             if not raw_text:
                 roman_segments.append(dict(seg))
                 continue
 
             # Ã°Å¸â€Â¥ 1) AI + dataset se Roman clean (line-level)
-            clean_roman = ai_cleanup_roman_captions(raw_text, settings)
+            clean_roman = _rule_based_clean_roman(literal_romanize(raw_text), settings)
             new_seg = dict(seg)
             new_seg["text"] = clean_roman
             roman_segments.append(new_seg)
@@ -1322,6 +1393,7 @@ def cut_all(  # renders all selected segments into final shorts with captions, t
         with thumbnail_ai_semaphore:
             return fn(*args, **kwargs)
     def _process_one_short(i: int, seg: dict):  # starts or manages a processing job
+            set_progress(4, f"Rendering short {i}/{total}", clip=i, total=total)
             start = float(seg["start"])
             end = float(seg["end"])
             dur = end - start
@@ -1440,7 +1512,7 @@ def cut_all(  # renders all selected segments into final shorts with captions, t
 
             # 2) CAPTIONS (Roman / English)
             if captions_enabled and ass_file is not None and captions_src.get("segments"):
-                set_progress(5, f"Creating Captions {i}/{total}")
+                set_progress(5, f"Creating captions {i}/{total}", clip=i, total=total)
                 print("[stage] Building captions track...", flush=True)
 
                 # Agar Roman Engine v2 chal raha hai to roman_whisper, warna original captions_src
@@ -1454,6 +1526,27 @@ def cut_all(  # renders all selected segments into final shorts with captions, t
                     uppercase=caption_uppercase,
                     text_case=caption_text_case,
                 )
+
+                # Whisper can occasionally return punctuation-only or badly timed source
+                # segments. Reuse the translated/meta track before giving up, while keeping
+                # the original timestamps and converting the fallback text for Roman mode.
+                if not cap_lines and meta_src is not captions_src:
+                    fallback_lines = make_ass.build_caption_lines_from_whisper(
+                        meta_src,
+                        clip_start=start,
+                        clip_end=end,
+                        bias_sec=(0.0 if captions_strict_timing else caption_start_bias_sec),
+                        uppercase=caption_uppercase,
+                        text_case=caption_text_case,
+                    )
+                    if romanize_captions:
+                        fallback_lines = [
+                            (ai_cleanup_roman_captions(text_value, settings), line_start, line_end)
+                            for text_value, line_start, line_end in fallback_lines
+                        ]
+                    cap_lines = fallback_lines
+                    if cap_lines:
+                        print("   [captions] Source transcript had no usable text in range; using translated transcript fallback.", flush=True)
 
                 if cap_lines:
                     if not captions_strict_timing:
@@ -1569,13 +1662,15 @@ def cut_all(  # renders all selected segments into final shorts with captions, t
                     clip_for_finalize = captioned_clip_tmp
             else:
                 if captions_enabled:
-                    print("   - Captions enabled but no segments found - skipping captions.")
+                    print(f"   [WARN] Captions enabled, but no speech was detected in the selected range {start:.2f}s-{end:.2f}s; skipping captions for this short.", flush=True)
                 else:
                     print("   - Captions disabled for this short.")
 
 
             # 3) META (base from meta_src only)
-            seg_text = _text_for_range_fallback(meta_src, start, end)
+            set_progress(7, f"Writing metadata {i}/{total}", clip=i, total=total)
+            roman_meta_src = roman_whisper if romanize_meta and roman_whisper is not None else meta_src
+            seg_text = _text_for_range_fallback(roman_meta_src, start, end)
             if not seg_text:
                 seg_text = (meta_src.get("text") or "").strip()
             if not seg_text:
@@ -1585,9 +1680,12 @@ def cut_all(  # renders all selected segments into final shorts with captions, t
 
             base_text = seg_text
 
-            if romanize_meta:
+            if romanize_meta and roman_whisper is None:
                 print("   - Romanizing META (title/hooks/description)...")
                 final_meta_text = ai_romanize_text(base_text, settings)
+                meta_lang = "roman"
+            elif romanize_meta:
+                final_meta_text = base_text
                 meta_lang = "roman"
             else:
                 meta_lang = "en"
@@ -1617,6 +1715,8 @@ def cut_all(  # renders all selected segments into final shorts with captions, t
             try:
                 best_hook = meta["hooks"][0] if meta.get("hooks") else meta["title"]
 
+                set_progress(6, f"Generating thumbnails {i}/{total}", clip=i, total=total)
+
                 _run_thumbnail_limited(
                 create_thumbnail_for_short,
                     video_path=clip_for_thumbnail,
@@ -1626,7 +1726,6 @@ def cut_all(  # renders all selected segments into final shorts with captions, t
                     variations=3,
                     transcript_text=final_meta_text,
                 )
-                set_progress(6, f"Generating Thumbnails {i}/{total}")
                 print(f"[stage] Thumbnail created: {thumbnail_file.name} (+ 3 variations)", flush=True)
             except Exception as e:
                 print(f"   [WARN] Thumbnail creation failed: {e}")        
@@ -1639,12 +1738,30 @@ def cut_all(  # renders all selected segments into final shorts with captions, t
             # 4.1) OPTIONAL BACKGROUND MUSIC
             music_enabled = bool(settings.get("music_enabled", False))
             music_category = str(settings.get("music_category", "none"))
+            music_volume = float(settings.get("music_volume", 0.20))
             music_track = str(settings.get("music_track", "") or "")
 
             if music_enabled:
-                selected_music = pick_music_track(music_category, preferred_track=music_track)
+                music_selection: Dict[str, Any] = {}
+                selected_music = pick_music_track(
+                    music_category,
+                    preferred_track=music_track,
+                    selection_info=music_selection,
+                )
+                with outputs_lock:
+                    settings["music_substituted"] = bool(music_selection.get("music_substituted", False))
+                    settings["actual_music_track"] = str(music_selection.get("actual_music_track", ""))
+                    settings["actual_music_category"] = str(music_selection.get("actual_music_category", ""))
+                    if music_selection.get("music_substituted"):
+                        settings.setdefault("music_substitutions", []).append({
+                            "short_index": i,
+                            "requested_track": music_track,
+                            "actual_track": music_selection.get("actual_music_track", ""),
+                            "actual_category": music_selection.get("actual_music_category", ""),
+                        })
 
                 if selected_music:
+                    set_progress(4, f"Adding music {i}/{total}", clip=i, total=total)
                     track_label = Path(selected_music).name
                     print(f"   Adding background music: {music_category} / {track_label}")
 
@@ -1678,7 +1795,7 @@ def cut_all(  # renders all selected segments into final shorts with captions, t
             with outputs_lock:
                 outputs.append(final_clip)
 
-            set_progress(6, f"Completed Short {i}/{total}")
+            set_progress(4, f"Completed short {i}/{total}", clip=i, total=total, done=True)
             print(f"[stage] Completed short {i}/{total}: {final_clip.name}", flush=True)
 
     if max_short_workers <= 1 or total <= 1:
@@ -1706,6 +1823,9 @@ def cut_all(  # renders all selected segments into final shorts with captions, t
                     print(f"   [ERROR] Short {idx}/{total} failed: {e}", flush=True)
 
     outputs.sort(key=lambda path: str(path))
+
+    if len(outputs) != total:
+        raise RuntimeError(f"Only {len(outputs)} of {total} shorts completed. Check the short errors above.")
 
     return outputs
 

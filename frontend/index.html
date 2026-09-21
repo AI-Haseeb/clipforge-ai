@@ -1,5 +1,5 @@
-﻿<!-- ClipForge AI file note: Static frontend markup for landing page, Creator Studio, auth modals, progress, pricing, and results UI. -->
-ï»¿<!DOCTYPE html>
+<!-- ClipForge AI file note: Static frontend markup for landing page, Creator Studio, auth modals, progress, pricing, and results UI. -->
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -912,6 +912,7 @@
             <div class="panel-heading"><h3>Basic Output Setup</h3><p>Choose how ClipForge should find and format your shorts.</p></div>
             <section class="grid flow-grid">
               <div><label for="segmentMode">Segment Mode</label><select id="segmentMode"><option value="semantic_ai">Semantic AI</option><option value="fixed_duration">Fixed Duration</option><option value="manual">Manual Ranges</option><option value="raw_footage">Raw Footage</option></select></div>
+              <div><label for="platform">Target Platform</label><select id="platform"><option value="youtube">YouTube Shorts</option><option value="instagram">Instagram Reels</option><option value="tiktok">TikTok</option></select></div>
               <div><label for="aspectRatio">Aspect Ratio</label><select id="aspectRatio"><option value="9:16">9:16 Shorts</option><option value="16:9">16:9 Wide</option><option value="1:1">1:1 Square</option><option value="4:5">4:5 Feed</option></select></div>
               <div><label for="outputResolution">Output Quality</label><select id="outputResolution"><option value="1080p">1080p Full HD</option><option value="720p">720p HD</option><option value="480p">480p Small File</option></select></div>
             </section>
@@ -1048,7 +1049,16 @@
           <ul id="progressEvents"></ul>
         </div>
         <pre id="statusText">Waiting for input...</pre>
-        <div class="resume-row"><input id="resumeJobId" type="text" placeholder="Paste Job ID to resume, example: what_is_pain_sad_multifandom" /><button id="resumeJobBtn" type="button">Resume Job</button><button id="clearJobBtn" type="button" class="secondary-btn">Clear</button></div>
+        <div class="resume-row"><input
+          id="resumeJobId"
+          type="text"
+          name="resume_job_id"
+          autocomplete="off"
+          data-lpignore="true"
+          data-form-type="other"
+          spellcheck="false"
+          placeholder="Paste Job ID to resume, example: what_is_pain_sad_multifandom"
+        /><button id="resumeJobBtn" type="button">Resume Job</button><button id="clearJobBtn" type="button" class="secondary-btn">Clear</button></div>
         <p class="hint">Active processing resumes after a browser refresh. Completed older runs load only when you paste a Job ID and click Resume Job.</p>
       </section>
     </section>
@@ -1103,6 +1113,10 @@
               <span class="result-tab-copy"><strong>Metadata</strong><small>Copy titles and hashtags</small></span>
               <span id="metaCount">0</span>
             </button>
+            <button class="result-tab publish-result-tab" type="button" data-result-tab="publishPanel">
+              <span class="result-tab-copy"><strong>Publish to YouTube</strong><small>Select, review and upload shorts</small></span>
+              <span>YT</span>
+            </button>
           </aside>
 
           <div class="result-panels results-content">
@@ -1116,6 +1130,26 @@
 
             <section id="metadataPanel" class="result-panel">
               <div id="metaList"></div>
+            </section>
+
+            <section id="publishPanel" class="result-panel">
+              <div id="publishCenter" class="publish-center" aria-live="polite">
+                <div class="publish-center-head">
+                  <div><span class="section-kicker">YouTube Publishing</span><h4>Prepare your shorts</h4><p>Select shorts, choose thumbnails, and publish with generated metadata.</p></div>
+                </div>
+                <div class="publish-toolbar">
+                  <label class="check-control"><input id="selectAllShorts" type="checkbox" /> Select all shorts</label>
+                  <span id="selectedShortsCount">0 selected</span>
+                </div>
+                <div id="publishShortsList" class="publish-shorts-list"></div>
+                <div class="publish-settings-grid">
+                  <label>Visibility<select id="youtubeVisibility"><option value="private">Private (Recommended)</option><option value="unlisted">Unlisted</option><option value="public">Public</option></select></label>
+                  <label>Publishing<select id="youtubePublishMode"><option value="now">Upload now</option><option value="schedule">Schedule</option></select></label>
+                  <label id="youtubeScheduleField" class="hidden">Schedule time<input id="youtubeScheduleAt" type="datetime-local" /></label>
+                </div>
+                <div class="publish-review" id="publishReview">Select at least one short to continue.</div>
+                <button id="confirmYoutubePublish" class="primary-btn" type="button" disabled>Connect YouTube & Continue</button>
+              </div>
             </section>
 
           </div>
