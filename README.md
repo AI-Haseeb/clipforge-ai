@@ -125,6 +125,9 @@ git clone https://github.com/AI-Haseeb/clipforge-ai.git
 cd clipforge-ai
 ```
 
+For a copy-paste setup guide on a new Windows computer, open
+[`START_CLIPFORGE_ON_NEW_COMPUTER.txt`](START_CLIPFORGE_ON_NEW_COMPUTER.txt).
+
 ## Setup
 
 Create and activate a virtual environment:

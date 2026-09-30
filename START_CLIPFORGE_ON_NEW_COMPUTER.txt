@@ -1,0 +1,196 @@
+CLIPFORGE AI - NEW COMPUTER START GUIDE
+========================================
+
+This file is for running ClipForge AI on another Windows computer.
+Repository:
+https://github.com/AI-Haseeb/clipforge-ai
+
+
+1. INSTALL REQUIRED SOFTWARE
+----------------------------
+
+Install these first:
+
+- Git: https://git-scm.com/download/win
+- Python 3.11: https://www.python.org/downloads/
+- FFmpeg
+- Optional: Docker Desktop (only needed for Redis queue mode)
+
+If WinGet is available, install FFmpeg with:
+
+winget install --id Gyan.FFmpeg.Shared -e
+
+After installing FFmpeg, close PowerShell, open a new PowerShell window, and verify:
+
+ffmpeg -version
+ffprobe -version
+
+Both commands must work before starting ClipForge.
+
+
+2. DOWNLOAD THE PROJECT
+-----------------------
+
+Open PowerShell and run:
+
+git clone https://github.com/AI-Haseeb/clipforge-ai.git
+cd clipforge-ai
+
+
+3. CREATE THE PYTHON ENVIRONMENT
+--------------------------------
+
+Run these commands from inside the clipforge-ai folder:
+
+py -3.11 -m venv clipforge_env
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+& ".\clipforge_env\Scripts\Activate.ps1"
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+
+IMPORTANT:
+Do not type an extra closing parenthesis after RemoteSigned.
+Correct:
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+
+If the py command does not work, use:
+
+python -m venv clipforge_env
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+& ".\clipforge_env\Scripts\Activate.ps1"
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+
+
+4. OPTIONAL API KEYS
+--------------------
+
+Most local fallback features can run without API keys. Add these files only when
+you want the related AI features:
+
+config\openai_api_key.txt
+config\huggingface_api_key.txt
+
+Never paste API keys into GitHub and never commit these files.
+
+
+5. START CLIPFORGE WITHOUT REDIS QUEUE
+--------------------------------------
+
+Open PowerShell Terminal 1 in the clipforge-ai folder:
+
+& ".\clipforge_env\Scripts\Activate.ps1"
+python -m uvicorn backend.app.main:app --reload
+
+Keep this terminal open.
+
+Open PowerShell Terminal 2 in the same folder:
+
+python -m http.server 5500 --directory frontend
+
+Keep this terminal open too.
+
+Open this URL in your browser:
+
+http://127.0.0.1:5500
+
+The backend API is available at:
+
+http://127.0.0.1:8000
+
+
+6. START REDIS QUEUE MODE (OPTIONAL)
+------------------------------------
+
+Use this mode for background processing and batch jobs.
+
+Open PowerShell Terminal 1:
+
+docker run --name clipforge-redis -p 6379:6379 -d redis:7
+
+If the container already exists, use:
+
+docker start clipforge-redis
+
+Open Terminal 2 and start the backend:
+
+& ".\clipforge_env\Scripts\Activate.ps1"
+python -m uvicorn backend.app.main:app --reload
+
+Open Terminal 3 and start the worker:
+
+& ".\clipforge_env\Scripts\Activate.ps1"
+python -m backend.app.worker high default low
+
+Queue health check:
+
+http://127.0.0.1:8000/queue/health
+
+
+7. YOUTUBE PUBLISHING (OPTIONAL)
+---------------------------------
+
+YouTube publishing needs the local OAuth client file:
+
+config\youtube_client_secret.json
+
+This file is intentionally not included in GitHub. Copy it separately to the
+same path on the new computer. The OAuth token will be created locally at:
+
+data\youtube_tokens\default.json
+
+Do not upload either file to GitHub.
+
+
+8. QUICK VERIFICATION
+---------------------
+
+Run these from the activated environment:
+
+python -m py_compile backend\app\main.py src\main.py
+node --check frontend\app.js
+python -m unittest tests.test_roman_openai tests.test_progress_state -v
+
+If YouTube workflow tests are present:
+
+python -m unittest tests.test_youtube_workflow -v
+
+
+9. COMMON FIXES
+---------------
+
+PowerShell says scripts are disabled:
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+& ".\clipforge_env\Scripts\Activate.ps1"
+
+FFmpeg not found:
+
+Run ffmpeg -version and ffprobe -version. If either fails, install FFmpeg and
+restart PowerShell so PATH refreshes.
+
+Backend connection failed in the browser:
+
+Confirm that Terminal 1 is still running the Uvicorn backend on port 8000.
+
+Redis queue unavailable:
+
+Start Docker/Redis and then start the worker command from Section 6.
+
+No generated videos appear:
+
+Check the backend and worker terminal output. The first Whisper model download
+can take several minutes and needs internet access.
+
+
+10. STOP THE APP
+----------------
+
+In each running terminal press:
+
+Ctrl+C
+
+To leave the Python environment:
+
+deactivate
+
