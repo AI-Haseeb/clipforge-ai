@@ -73,11 +73,17 @@ clipforge-ai/
 
 Install these before running the app:
 
-- Python 3.11 recommended
+- Python 3.11 recommended (Python 3.10+ should work)
 - Git
 - FFmpeg available in terminal as `ffmpeg` and `ffprobe`
 - VS Code Live Server or any static file server for the frontend
 - Docker only if you want to run Redis easily for queue mode
+
+For a CPU-only computer, use at least 4 CPU cores and 8 GB RAM for small videos.
+For regular 1080p work, 16 GB RAM is a safer baseline. A CUDA-capable NVIDIA GPU is
+optional; it mainly speeds up Whisper transcription. Rendering still uses FFmpeg and
+CPU resources. Keep at least 50 GB of free SSD space because uploaded videos,
+intermediate files, and generated results can be large.
 
 ## Download From GitHub
 
@@ -113,19 +119,47 @@ config/huggingface_api_key.txt
 
 Do not commit API keys. They are ignored by `.gitignore`.
 
+### Windows PowerShell activation
+
+If PowerShell blocks script execution, run this exact command. Do not add an extra
+closing parenthesis after `RemoteSigned`:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+& ".\clipforge_env\Scripts\Activate.ps1"
+```
+
+If your environment folder has a different name, replace `clipforge_env` with that
+folder name. On macOS/Linux use:
+
+```bash
+python3 -m venv clipforge_env
+source clipforge_env/bin/activate
+pip install -r requirements.txt
+```
+
 ## Run Locally Without Queue
 
-Start backend:
+Start backend in Terminal 1:
 
 ```powershell
 python -m uvicorn backend.app.main:app --reload
 ```
 
-Open frontend with VS Code Live Server:
+Open the frontend in Terminal 2 with VS Code Live Server or another static server:
 
 ```text
 frontend/index.html
 ```
+
+For a simple Python static server, run this from the repository root:
+
+```powershell
+python -m http.server 5500 --directory frontend
+```
+
+Then open <http://127.0.0.1:5500> in your browser. Keep the backend at
+<http://127.0.0.1:8000>.
 
 Recommended quick test:
 
@@ -171,6 +205,73 @@ http://127.0.0.1:8000/queue/health
 ```
 
 More details are in `QUEUE_SETUP.md`.
+
+## YouTube publishing setup
+
+YouTube publishing needs a Google OAuth desktop/web client configured for this app.
+Keep the client JSON at `config/youtube_client_secret.json` locally and never commit it.
+The refresh token is stored at `data/youtube_tokens/default.json`, which is also local
+and ignored by Git. For local development, the OAuth callback is:
+
+```text
+http://localhost:8000/youtube/auth/callback
+```
+
+For a cloud deployment, replace the callback with the public HTTPS API URL and add the
+same URL in Google Cloud Console. Use persistent storage for the token and generated
+files; an ephemeral cloud disk will lose them after a restart.
+
+## Run in a Linux cloud environment
+
+Install system packages first:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y ffmpeg redis-server
+```
+
+Set the Linux FFmpeg paths in `config/settings.yaml` or use `ffmpeg` and `ffprobe` from
+`PATH`; the checked-in Windows paths are only for the local Windows setup. Set secrets
+through the cloud provider's environment/secrets settings instead of committing files:
+
+```bash
+export OPENAI_API_KEY="..."
+export HF_TOKEN="..."
+export REDIS_URL="redis://localhost:6379/0"
+```
+
+Start the API without development reload:
+
+```bash
+uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
+```
+
+Start a separate worker for video processing:
+
+```bash
+python -m backend.app.worker high default low
+```
+
+For a small private MVP, one 4-vCPU/16-GB worker can run the API and worker together.
+For a multi-user service, separate the API and workers, use managed Redis and PostgreSQL,
+and put uploads/results in S3-compatible object storage. A GPU worker is recommended
+only when transcription throughput matters; it is not required for the complete flow.
+
+## Verification commands
+
+Run these from the repository root after activating the environment:
+
+```powershell
+python -m py_compile backend/app/main.py src/main.py
+node --check frontend/app.js
+python -m unittest tests.test_roman_openai tests.test_progress_state -v
+```
+
+When testing queue mode, confirm Redis is reachable at:
+
+```text
+http://127.0.0.1:8000/queue/health
+```
 
 ## Output Locations
 

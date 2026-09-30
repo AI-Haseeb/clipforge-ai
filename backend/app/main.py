@@ -36,7 +36,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.mount("/data", StaticFiles(directory="data"), name="data")
+class PublicDataFiles(StaticFiles):
+    """Serve generated media without exposing local credentials or auth databases."""
+    def lookup_path(self, path):
+        full_path, stat_result = super().lookup_path(path)
+        resolved = Path(full_path).resolve() if full_path else Path("data").resolve()
+        private = Path("data/youtube_tokens").resolve()
+        if resolved == private or private in resolved.parents or resolved.name.startswith("clipforge_auth"):
+            return "", None
+        return full_path, stat_result
+
+
+app.mount("/data", PublicDataFiles(directory="data"), name="data")
 init_auth_db()
 
 UPLOAD_DIR = Path("data/uploads")
@@ -51,6 +62,29 @@ YOUTUBE_CLIENT_SECRET = Path("config/youtube_client_secret.json")
 YOUTUBE_REDIRECT_URI = "http://localhost:8000/youtube/auth/callback"
 YOUTUBE_SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 YOUTUBE_AUTH_STATE = {}
+_YOUTUBE_CREDENTIAL_LOCK = threading.Lock()
+_YOUTUBE_PUBLISH_LOCK = threading.Lock()
+
+
+def _local_youtube_origin(origin):
+    try:
+        parsed = urlparse(origin)
+        return (parsed.scheme == "http" and parsed.hostname in {"localhost", "127.0.0.1", "::1"}
+                and parsed.port is not None and not parsed.username and not parsed.password
+                and not parsed.path and not parsed.query and not parsed.fragment)
+    except (ValueError, TypeError):
+        return False
+
+
+@app.middleware("http")
+async def protect_youtube_requests(request, call_next):
+    if request.url.path.startswith("/youtube/"):
+        origin = request.headers.get("origin")
+        if (request.url.hostname not in {"localhost", "127.0.0.1", "::1"}
+                or (origin and not _local_youtube_origin(origin))
+                or (not origin and request.headers.get("sec-fetch-site") == "cross-site" and request.url.path != "/youtube/auth/callback")):
+            return JSONResponse({"detail": "Open ClipForge from a localhost frontend server to use YouTube publishing."}, status_code=403)
+    return await call_next(request)
 
 JOBS = {}
 
@@ -1665,78 +1699,184 @@ def _parse_youtube_metadata(path: Path) -> dict:
     tags = block("HASHTAGS COMMA", ["META", "CLIP RANGE", "KEYWORDS HIT"])
     return {"title": title or path.stem, "description": description, "tags": [x.strip() for x in tags.split(",") if x.strip()]}
 
-def _youtube_output_dir(job_id: str) -> Path:
+def _youtube_output_dirs(job_id: str) -> List[Path]:
     job = _get_or_restore_job(job_id)
     if not job or job.get("status") != "completed":
         raise HTTPException(status_code=400, detail="Job is not completed or was not found.")
     result = job.get("result", {})
     dirs = result.get("output_dirs") if job.get("type") == "batch" else [result.get("output_dir")]
-    for raw in dirs or []:
-        path = Path(raw or "")
-        if path.is_dir(): return path
+    paths = [Path(raw) for raw in dirs or [] if raw and Path(raw).is_dir()]
+    if paths:
+        return paths
     raise HTTPException(status_code=404, detail="Generated output folder not found.")
 
+def _save_youtube_credentials(creds):
+    path = _youtube_token_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(creds.to_json(), encoding="utf-8")
+    temporary.replace(path)
+
+
+def _youtube_credentials():
+    _, Credentials, _, _ = _youtube_libraries()
+    with _YOUTUBE_CREDENTIAL_LOCK:
+        if not _youtube_token_path().is_file():
+            raise HTTPException(401, "Connect YouTube first.")
+        try:
+            creds = Credentials.from_authorized_user_file(str(_youtube_token_path()), YOUTUBE_SCOPES)
+            if not creds.valid and creds.refresh_token:
+                from google.auth.transport.requests import Request
+                creds.refresh(Request())
+                _save_youtube_credentials(creds)
+            if not creds.valid:
+                raise ValueError("Invalid credentials")
+            return creds
+        except Exception as exc:
+            raise HTTPException(401, "YouTube connection could not be verified. Check your internet connection or connect YouTube again.") from exc
+
+
+def _youtube_callback_page(message, origin=None, success=False, status_code=200):
+    event = {"type": "clipforge-youtube-connected" if success else "clipforge-youtube-error", "message": message}
+    script = ""
+    if origin and _local_youtube_origin(origin):
+        script = f"if (window.opener) {{ window.opener.postMessage({json.dumps(event)}, {json.dumps(origin)}); }}"
+        if success:
+            script += "setTimeout(() => window.close(), 700);"
+    return HTMLResponse(f"<!doctype html><html><body style='font-family:system-ui;padding:32px'><h2>{html.escape(message)}</h2><p>Return to ClipForge to review your selected shorts.</p><script>{script}</script></body></html>", status_code=status_code)
+
+
 @app.get("/youtube/auth/start")
-def youtube_auth_start(job_id: str):
+def youtube_auth_start(job_id: str, frontend_origin: str = "http://localhost:5500"):
+    if not _local_youtube_origin(frontend_origin):
+        raise HTTPException(400, "Open ClipForge from a localhost frontend server.")
+    now = time.time()
+    for key, value in list(YOUTUBE_AUTH_STATE.items()):
+        if now - value["created"] > 600:
+            YOUTUBE_AUTH_STATE.pop(key, None)
     flow = _youtube_flow()
     state = uuid.uuid4().hex
-    YOUTUBE_AUTH_STATE[state] = {"job_id": job_id, "created": time.time()}
     url, _ = flow.authorization_url(access_type="offline", include_granted_scopes="true", prompt="consent", state=state)
+    # Keep this flow: recreating it can lose the PKCE verifier used by Google.
+    YOUTUBE_AUTH_STATE[state] = {"job_id": job_id, "created": now, "origin": frontend_origin, "flow": flow}
     return {"authorize_url": url}
 
 @app.get("/youtube/auth/callback")
 def youtube_auth_callback(code: Optional[str] = None, state: Optional[str] = None, error: Optional[str] = None):
-    if error: return HTMLResponse(f"YouTube authorization cancelled: {html.escape(error)}", status_code=400)
-    if not code or state not in YOUTUBE_AUTH_STATE: return HTMLResponse("Invalid or expired YouTube authorization state.", status_code=400)
-    flow = _youtube_flow(state)
-    flow.fetch_token(code=code)
-    _youtube_token_path().write_text(flow.credentials.to_json(), encoding="utf-8")
-    YOUTUBE_AUTH_STATE.pop(state, None)
-    return HTMLResponse("""<!doctype html><html><body style='font-family:system-ui;padding:32px'><h2>YouTube connected</h2><p>Return to ClipForge to publish your selected shorts.</p><script>if (window.opener) { window.opener.postMessage({type:'clipforge-youtube-connected'}, '*'); setTimeout(() => window.close(), 700); }</script></body></html>""")
+    pending = YOUTUBE_AUTH_STATE.pop(state, None)
+    if not pending or time.time() - pending["created"] > 600:
+        return _youtube_callback_page("Invalid or expired YouTube authorization state. Connect again.", status_code=400)
+    if error or not code:
+        return _youtube_callback_page("YouTube authorization cancelled. Connect again when ready.", pending["origin"], status_code=400)
+    try:
+        flow = pending["flow"]
+        flow.fetch_token(code=code)
+        with _YOUTUBE_CREDENTIAL_LOCK:
+            _save_youtube_credentials(flow.credentials)
+    except Exception:
+        return _youtube_callback_page("YouTube connection failed. Check Google OAuth settings and try again.", pending["origin"], status_code=400)
+    return _youtube_callback_page("YouTube connected", pending["origin"], success=True)
 
 @app.get("/youtube/auth/status")
 def youtube_auth_status():
-    return {"connected": _youtube_token_path().is_file()}
+    try:
+        _youtube_credentials()
+        return {"connected": True}
+    except HTTPException as exc:
+        return {"connected": False, "detail": exc.detail}
+
+
+def _youtube_error(exc):
+    # Never expose raw exceptions, token-bearing URLs, or OAuth responses.
+    try:
+        reasons = [entry.get("reason", "") for entry in json.loads(exc.content).get("error", {}).get("errors", [])]
+        reason = ", ".join(x for x in reasons if re.fullmatch(r"[A-Za-z0-9_]+", x))
+        if reason:
+            return f"YouTube rejected the request ({reason}). Check channel permissions, verification and quota."
+    except (AttributeError, ValueError, TypeError):
+        pass
+    return "YouTube request failed. Check your connection and YouTube Studio before retrying; the upload outcome may be unknown."
 
 @app.post("/youtube/publish")
 def youtube_publish(payload: dict):
-    _, Credentials, build, MediaFileUpload = _youtube_libraries()
-    token_path = _youtube_token_path()
-    if not token_path.is_file(): raise HTTPException(status_code=401, detail="Connect YouTube first.")
-    creds = Credentials.from_authorized_user_file(str(token_path), YOUTUBE_SCOPES)
-    if not creds.valid and creds.expired and creds.refresh_token:
-        from google.auth.transport.requests import Request
-        creds.refresh(Request()); token_path.write_text(creds.to_json(), encoding="utf-8")
-    if not creds.valid: raise HTTPException(status_code=401, detail="YouTube connection expired. Connect again.")
-    output_dir = _youtube_output_dir(str(payload.get("job_id") or ""))
-    shorts = list((output_dir / "shorts").rglob("*.mp4")); thumbs = list((output_dir / "thumbnails").rglob("*")); metas = list((output_dir / "meta").rglob("*.txt"))
-    selected = payload.get("items") or []
-    if not selected: raise HTTPException(status_code=400, detail="Select at least one short.")
-    youtube = build("youtube", "v3", credentials=creds)
+    if not _YOUTUBE_PUBLISH_LOCK.acquire(blocking=False):
+        raise HTTPException(409, "A YouTube upload is already running. Wait for its result before retrying.")
+    try:
+        return _youtube_publish_items(payload)
+    finally:
+        _YOUTUBE_PUBLISH_LOCK.release()
+
+
+def _youtube_publish_items(payload):
+    selected = payload.get("items")
+    if not isinstance(selected, list) or not selected or any(not isinstance(x, dict) for x in selected):
+        raise HTTPException(400, "Select at least one short.")
     visibility = str(payload.get("visibility") or "private")
     mode = str(payload.get("publish_mode") or "now")
-    results = []
+    if visibility not in {"private", "unlisted", "public"} or mode not in {"now", "schedule"}:
+        raise HTTPException(400, "Choose a valid visibility and publishing mode.")
+    output_dirs = _youtube_output_dirs(str(payload.get("job_id") or ""))
+    shorts = [(p, root) for root in output_dirs for p in (root / "shorts").rglob("*.mp4")]
+    # Validate every selection before starting any uploads.
+    prepared, seen = [], set()
     for item in selected:
-        short_name = Path(str(item.get("short") or "")).name
-        short = next((p for p in shorts if p.name == short_name), None)
-        if not short: raise HTTPException(status_code=400, detail=f"Short not found: {short_name}")
-        stem = short.stem
-        meta = next((p for p in metas if p.stem == stem), None)
-        data = _parse_youtube_metadata(meta) if meta else {"title": stem, "description": "", "tags": []}
-        privacy = "private" if mode == "schedule" else visibility
-        status = {"privacyStatus": privacy, "selfDeclaredMadeForKids": False}
-        if mode == "schedule": status["publishAt"] = str(payload.get("publish_at") or "")
-        response = youtube.videos().insert(part="snippet,status", body={"snippet": {"title": data["title"][:100], "description": data["description"], "tags": data["tags"][:500], "categoryId": "22"}, "status": status}, media_body=MediaFileUpload(str(short), mimetype="video/mp4", resumable=True)).execute()
-        variation = int(item.get("thumbnail") or 1)
-        short_number = int(re.search(r"(\d+)$", stem).group(1)) if re.search(r"(\d+)$", stem) else 1
-        thumb = next((p for p in thumbs if re.fullmatch(rf"thumbnail_0?{short_number}(?:_v{variation if variation > 1 else 1})?\.(?:jpg|jpeg|png)", p.name, re.I)), None)
-        thumbnail_applied = False
+        short_name = str(item.get("short") or "")
+        matches = [(p, root) for p, root in shorts if p.name == short_name and not p.name.startswith("_")
+                   and (not item.get("url") or file_to_public_url(p) == item["url"])]
+        if len(matches) != 1 or matches[0][0] in seen:
+            raise HTTPException(400, f"Short missing, ambiguous or selected twice: {short_name}. Reload job results.")
+        short, output_dir = matches[0]
+        seen.add(short)
+        thumbs = list((output_dir / "thumbnails").rglob("*"))
+        metas = list((output_dir / "meta").rglob("*.txt"))
+        variation = item.get("thumbnail", 1)
+        if type(variation) is not int or variation not in range(1, 6):
+            raise HTTPException(400, "Choose a valid thumbnail number.")
+        number = re.search(r"(\d+)$", short.stem)
+        thumb = None
+        for candidate in sorted(thumbs):
+            match = re.fullmatch(r"thumbnail_(\d+)(?:_v(\d+))?\.(jpg|jpeg|png)", candidate.name, re.I)
+            if candidate.is_file() and number and match and int(match[1]) == int(number[1]) and int(match[2] or 1) == variation:
+                thumb = candidate
+                break
+        meta = next((p for p in metas if p.stem == short.stem), None)
+        data = _parse_youtube_metadata(meta) if meta else {"title": short.stem, "description": "", "tags": []}
+        prepared.append((short, thumb, data))
+    creds = _youtube_credentials()
+    _, _, build, MediaFileUpload = _youtube_libraries()
+    try:
+        youtube = build("youtube", "v3", credentials=creds)
+    except Exception as exc:
+        raise HTTPException(502, _youtube_error(exc)) from exc
+    status = {"privacyStatus": "private" if mode == "schedule" else visibility, "selfDeclaredMadeForKids": False}
+    if mode == "schedule":
+        status["publishAt"] = str(payload.get("publish_at") or "")
+    results = []
+    for short, thumb, data in prepared:
+        item = {"short": short.name, "source_url": file_to_public_url(short), "thumbnail_applied": False}
+        try:
+            response = youtube.videos().insert(part="snippet,status", body={"snippet": {"title": data["title"][:100], "description": data["description"], "tags": data["tags"][:500], "categoryId": "22"}, "status": status}, media_body=MediaFileUpload(str(short), mimetype="video/mp4", resumable=True)).execute()
+            video_id = response.get("id")
+            if not video_id:
+                raise ValueError("YouTube returned no video ID")
+            item.update(video_id=video_id, url=f"https://youtu.be/{video_id}")
+        except Exception as exc:
+            item["error"] = _youtube_error(exc)
+            results.append(item)
+            continue
         if thumb:
-            thumb_mime = "image/png" if thumb.suffix.lower() == ".png" else "image/jpeg"
-            youtube.thumbnails().set(videoId=response["id"], media_body=MediaFileUpload(str(thumb), mimetype=thumb_mime)).execute()
-            thumbnail_applied = True
-        results.append({"short": short_name, "video_id": response["id"], "url": f"https://youtu.be/{response['id']}", "thumbnail_applied": thumbnail_applied})
-    return {"status": "published", "items": results}
+            try:
+                mime = "image/png" if thumb.suffix.lower() == ".png" else "image/jpeg"
+                response = youtube.thumbnails().set(videoId=video_id, media_body=MediaFileUpload(str(thumb), mimetype=mime)).execute()
+                item["thumbnail_applied"] = bool(response.get("items"))
+                if not item["thumbnail_applied"]:
+                    item["warning"] = "Video uploaded, but YouTube did not confirm the thumbnail. Check YouTube Studio."
+            except Exception as exc:
+                item["warning"] = "Video uploaded; custom thumbnail failed. " + _youtube_error(exc)
+        else:
+            item["warning"] = "Video uploaded without a custom thumbnail: selected thumbnail file was not found."
+        results.append(item)
+    return {"status": "partial" if any(x.get("error") or x.get("warning") for x in results) else "published", "items": results}
 
 
 @app.get("/download-job/{job_id}")

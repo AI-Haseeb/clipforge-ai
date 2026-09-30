@@ -59,6 +59,7 @@ let publishThumbnailChoice = new Map();
 let youtubeAuthWindow = null;
 let youtubeStudioWindow = null;
 let youtubeConnected = false;
+let youtubePublishing = false;
 const thumbsList = document.getElementById("thumbsList");
 const metaList = document.getElementById("metaList");
 const zipDownload = document.getElementById("zipDownload");
@@ -2367,10 +2368,11 @@ function thumbnailNumber(item) {
   return match ? { short: Number(match[1]), variation: Number(match[2] || 1) } : null;
 }
 
-function thumbnailsForShort(shortIndex) {
+function thumbnailsForShort(shortIndex, shortItem) {
+  const sourceFolder = String(shortItem?.url || "").split("/shorts/")[0];
   return publishThumbnails.filter((item) => {
     const parsed = thumbnailNumber(item);
-    return parsed && parsed.short === shortIndex;
+    return parsed && parsed.short === shortIndex && (!sourceFolder || String(item.url || "").startsWith(`${sourceFolder}/thumbnails/`));
   }).sort((a, b) => (thumbnailNumber(a)?.variation || 1) - (thumbnailNumber(b)?.variation || 1));
 }
 
@@ -2383,9 +2385,9 @@ function renderPublishCenter() {
     ? `${selectedPublishShorts.size} short${selectedPublishShorts.size === 1 ? "" : "s"} ready. Thumbnail and generated metadata will be used.`
     : "Select at least one short to continue.";
   publishShortsList.innerHTML = publishShorts.map((item, index) => {
-    const shortNumber = index + 1;
+    const shortNumber = Number(String(item.name || "").match(/(\d+)\.mp4$/i)?.[1] || index + 1);
     const selected = selectedPublishShorts.has(index);
-    const thumbs = thumbnailsForShort(shortNumber);
+    const thumbs = thumbnailsForShort(shortNumber, item);
     const choice = publishThumbnailChoice.get(index) || 1;
     const options = thumbs.length ? thumbs.map((thumb, thumbIndex) => {
       const parsed = thumbnailNumber(thumb);
@@ -2399,23 +2401,43 @@ function renderPublishCenter() {
 }
 
 async function refreshYoutubeConnectionState() {
-  if (!confirmYoutubePublish) return;
+  if (!confirmYoutubePublish || youtubePublishing) return;
   try {
     const response = await fetch(makeApiUrl("/youtube/auth/status"));
     const data = await response.json();
+    if (youtubePublishing) return;
+    if (!response.ok) throw new Error(data.detail || "Could not check YouTube connection.");
     youtubeConnected = Boolean(data.connected);
     confirmYoutubePublish.textContent = data.connected ? "Publish Selected Shorts" : "Connect YouTube & Continue";
-    if (publishReview && data.connected) publishReview.textContent = "YouTube connected. Review your choices, then publish selected shorts.";
+    if (publishReview && !data.connected && data.detail) publishReview.textContent = data.detail;
   } catch (_) {
+    youtubeConnected = false;
     confirmYoutubePublish.textContent = "Connect YouTube & Continue";
   }
 }
 
 window.addEventListener("message", (event) => {
-  if (event.data?.type !== "clipforge-youtube-connected") return;
-  refreshYoutubeConnectionState();
-  if (publishReview) publishReview.textContent = "YouTube connected. Review your choices, then publish selected shorts.";
+  const callbackOrigins = new Set([new URL(API_BASE).origin, "http://localhost:8000"]);
+  if (!callbackOrigins.has(event.origin) || !youtubeAuthWindow || event.source !== youtubeAuthWindow) return;
+  if (event.data?.type === "clipforge-youtube-connected") {
+    refreshYoutubeConnectionState();
+    if (publishReview) publishReview.textContent = "YouTube connected. Review your choices, then publish selected shorts.";
+  } else if (event.data?.type === "clipforge-youtube-error") {
+    if (publishReview) publishReview.textContent = event.data.message || "YouTube authorization failed. Try again.";
+  }
 });
+window.addEventListener("focus", () => {
+  if (!youtubePublishing && youtubeAuthWindow) refreshYoutubeConnectionState();
+});
+
+function appendYoutubeLink(label, url) {
+  const link = document.createElement("a");
+  link.textContent = label;
+  link.href = url;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  publishReview?.append(document.createElement("br"), link);
+}
 
 function openPublishCenter() {
   publishCenter?.classList.remove("hidden");
@@ -2442,48 +2464,86 @@ publishShortsList?.addEventListener("change", (event) => {
 });
 youtubePublishMode?.addEventListener("change", () => youtubeScheduleField?.classList.toggle("hidden", youtubePublishMode.value !== "schedule"));
 confirmYoutubePublish?.addEventListener("click", async () => {
-  const selected = [...selectedPublishShorts].map((index) => ({
+  if (youtubePublishing) return;
+  const selection = [...selectedPublishShorts].map((index) => ({ index,
     short: publishShorts[index]?.name,
+    url: publishShorts[index]?.url,
     thumbnail: publishThumbnailChoice.get(index) || 1,
   }));
-  const schedule = youtubePublishMode.value === "schedule" ? youtubeScheduleAt.value : "now";
-  if (!selected.length) return;
+  if (!selection.length) return;
+  const selected = selection.map(({ short, url, thumbnail }) => ({ short, url, thumbnail }));
+  // Reserve one tab synchronously; the fresh auth result decides its destination.
+  const popup = window.open("about:blank", "clipforge-youtube-action");
+  let navigated = false;
+  youtubePublishing = true;
   confirmYoutubePublish.disabled = true;
-  confirmYoutubePublish.textContent = "Starting YouTube connection...";
-  if (youtubeConnected && (!youtubeStudioWindow || youtubeStudioWindow.closed)) {
-    youtubeStudioWindow = window.open("about:blank", "clipforge-youtube-studio");
-  }
-  // Reserve a browser tab during the click gesture so popup blockers do not
-  // prevent the OAuth or YouTube Studio tab after an async API request.
-  if (!youtubeConnected && (!youtubeAuthWindow || youtubeAuthWindow.closed)) youtubeAuthWindow = window.open("about:blank", "clipforge-youtube-auth");
+  confirmYoutubePublish.textContent = "Checking YouTube connection...";
+  const controls = [...publishCenter.querySelectorAll("input, select")];
+  controls.forEach(control => { control.disabled = true; });
   try {
     const statusResponse = await fetch(makeApiUrl("/youtube/auth/status"));
     const statusData = await statusResponse.json();
-    if (!statusData.connected) {
-      const response = await fetch(makeApiUrl(`/youtube/auth/start?job_id=${encodeURIComponent(currentJobId)}`));
+    if (!statusResponse.ok) throw new Error(statusData.detail || "YouTube connection check failed.");
+    youtubeConnected = Boolean(statusData.connected);
+    if (!youtubeConnected) {
+      const response = await fetch(makeApiUrl(`/youtube/auth/start?job_id=${encodeURIComponent(currentJobId)}&frontend_origin=${encodeURIComponent(location.origin)}`));
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || data.error || "YouTube connection could not start.");
-      if (!data.authorize_url) throw new Error("YouTube authorization URL was not returned by the backend.");
-      setStatus(`Opening Google authorization for ${selected.length} selected short${selected.length === 1 ? "" : "s"}...`);
-      if (!youtubeAuthWindow || youtubeAuthWindow.closed) youtubeAuthWindow = window.open("about:blank", "clipforge-youtube-auth");
-      if (youtubeAuthWindow) youtubeAuthWindow.location.href = data.authorize_url;
-      else window.location.assign(data.authorize_url);
+      const authorizeUrl = new URL(data.authorize_url);
+      if (authorizeUrl.protocol !== "https:" || authorizeUrl.hostname !== "accounts.google.com") throw new Error("Invalid Google authorization URL.");
+      youtubeAuthWindow = popup;
+      publishReview.textContent = "Complete Google authorization in the new tab, then return here and click Publish Selected Shorts.";
+      if (popup && !popup.closed) {
+        popup.location.href = authorizeUrl.href;
+        navigated = true;
+      } else {
+        publishReview.textContent = "Your browser blocked the Google tab. Allow popups for ClipForge and try again, or use this link, then return to the Publish tab.";
+        appendYoutubeLink("Connect YouTube in a new tab", authorizeUrl.href);
+      }
     } else {
-      if (youtubeAuthWindow && !youtubeAuthWindow.closed) youtubeAuthWindow.close();
-      youtubeAuthWindow = null;
+      confirmYoutubePublish.textContent = "Uploading selected shorts...";
+      publishReview.textContent = "Uploading. Keep ClipForge open until all results appear.";
       const response = await fetch(makeApiUrl("/youtube/publish"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ job_id: currentJobId, items: selected, visibility: youtubeVisibility.value, publish_mode: youtubePublishMode.value, publish_at: youtubeScheduleAt.value }) });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || data.error || "YouTube upload failed.");
-      setStatus(`YouTube upload complete.\n${data.items.map((item) => `${item.short}: ${item.url}`).join("\n")}`);
-      const studioUrl = "https://studio.youtube.com/channel/UCG36z8LyMB5wLmS3hPQuwbg/videos/upload?filter=%5B%5D&sort=%7B%22columnType%22%3A%22date%22%2C%22sortOrder%22%3A%22DESCENDING%22%7D";
-      if (youtubeStudioWindow) youtubeStudioWindow.location.href = studioUrl;
-      else setStatus(`Upload complete. Browser blocked the new tab. Open YouTube Studio manually: ${studioUrl}`);
+      if (!response.ok) {
+        if (response.status === 401) youtubeConnected = false;
+        throw new Error(data.detail || data.error || "YouTube upload failed.");
+      }
+      const items = data.items || [];
+      const successful = items.filter(item => item.video_id);
+      for (const item of successful) {
+        const original = selection.find(entry => item.source_url ? entry.url === item.source_url : entry.short === item.short);
+        if (original) selectedPublishShorts.delete(original.index);
+      }
+      renderPublishCenter();
+      const summary = `${successful.length}/${selection.length} shorts uploaded. ` +
+        (successful.length < selection.length ? "Review failed uploads in YouTube Studio before retrying. " : "") +
+        "Successfully uploaded shorts have been deselected.";
+      publishReview.textContent = summary;
+      for (const item of items) {
+        const row = document.createElement("div");
+        row.textContent = `${item.short}: ${item.error || (item.warning ? item.warning : "Uploaded successfully.")}`;
+        publishReview.append(row);
+        if (item.video_id) appendYoutubeLink(`View ${item.short}`, item.url);
+      }
+      setStatus(summary);
+      const studioUrl = "https://studio.youtube.com/";
+      appendYoutubeLink("Open YouTube Studio in a new tab", studioUrl);
+      if (successful.length && popup && !popup.closed) {
+        youtubeStudioWindow = popup;
+        popup.opener = null;
+        popup.location.href = studioUrl;
+        navigated = true;
+      }
     }
   } catch (error) {
-    const message = `YouTube setup error: ${error.message}`;
+    const message = `YouTube: ${error.message}. If an upload started, check YouTube Studio before retrying.`;
     if (publishReview) publishReview.textContent = message;
     setStatus(message);
   } finally {
+    if (popup && !popup.closed && !navigated) popup.close();
+    youtubePublishing = false;
+    controls.forEach(control => { control.disabled = false; });
     confirmYoutubePublish.disabled = selectedPublishShorts.size === 0;
     confirmYoutubePublish.textContent = youtubeConnected ? "Publish Selected Shorts" : "Connect YouTube & Continue";
   }
