@@ -85,6 +85,39 @@ optional; it mainly speeds up Whisper transcription. Rendering still uses FFmpeg
 CPU resources. Keep at least 50 GB of free SSD space because uploaded videos,
 intermediate files, and generated results can be large.
 
+### Install and verify FFmpeg
+
+FFmpeg is a system dependency and is not installed by `pip install`. On Windows,
+install a trusted FFmpeg build, add its `bin` folder to PATH, then open a new
+PowerShell window. With WinGet available, this is one option:
+
+```powershell
+winget install --id Gyan.FFmpeg.Shared -e
+```
+
+On macOS:
+
+```bash
+brew install ffmpeg
+```
+
+On Ubuntu/Debian:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y ffmpeg
+```
+
+Verify the installation before starting ClipForge:
+
+```text
+ffmpeg -version
+ffprobe -version
+```
+
+The checked-in settings use `ffmpeg` and `ffprobe` from PATH, so a new computer does
+not need the old machine's `C:/ffmpeg/...` path.
+
 ## Download From GitHub
 
 ```powershell
@@ -137,6 +170,9 @@ python3 -m venv clipforge_env
 source clipforge_env/bin/activate
 pip install -r requirements.txt
 ```
+
+After installing dependencies, run the verification commands below before opening the
+frontend. The first Whisper run may download a model and can take several minutes.
 
 ## Run Locally Without Queue
 
@@ -265,6 +301,12 @@ Run these from the repository root after activating the environment:
 python -m py_compile backend/app/main.py src/main.py
 node --check frontend/app.js
 python -m unittest tests.test_roman_openai tests.test_progress_state -v
+```
+
+If the YouTube workflow tests are present in your checkout, run them too:
+
+```powershell
+python -m unittest tests.test_youtube_workflow -v
 ```
 
 When testing queue mode, confirm Redis is reachable at:

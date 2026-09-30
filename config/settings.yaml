@@ -218,8 +218,10 @@ filter_strength: 1.0
 # -----------------
 # FFmpeg paths
 # -----------------
-ffmpeg_path: "C:/ffmpeg/bin/ffmpeg.exe"
-ffprobe_path: "C:/ffmpeg/bin/ffprobe.exe"
+# Resolve these from PATH so the project works on Windows, macOS, and Linux.
+# Set absolute paths here only when FFmpeg is not on PATH.
+ffmpeg_path: "ffmpeg"
+ffprobe_path: "ffprobe"
 
 # -----------------
 # FFmpeg Encode (CPU)

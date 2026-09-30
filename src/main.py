@@ -1136,8 +1136,9 @@ def main():  # runs this module as its command-line entry point
     ffmpeg_path_setting = str(settings.get("ffmpeg_path", "") or "").strip()
     ffprobe_path_setting = str(settings.get("ffprobe_path", "") or "").strip()
 
-    ffmpeg_path = _resolve_tool_path(ffmpeg_path_setting, "C:/ffmpeg/bin/ffmpeg.exe")
-    ffprobe_path = _resolve_tool_path(ffprobe_path_setting, "C:/ffmpeg/bin/ffprobe.exe")
+    # Prefer PATH-based binaries so a fresh clone works across Windows, macOS, and Linux.
+    ffmpeg_path = _resolve_tool_path(ffmpeg_path_setting, "ffmpeg")
+    ffprobe_path = _resolve_tool_path(ffprobe_path_setting, "ffprobe")
 
     _validate_tool_exists("ffmpeg", ffmpeg_path)
     _validate_tool_exists("ffprobe", ffprobe_path)
